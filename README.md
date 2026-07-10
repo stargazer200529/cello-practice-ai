@@ -1,29 +1,54 @@
 # Cello Practice AI
 
-Cello Practice AI is a planned practice companion for cellists. The product is
-intended to help musicians structure practice sessions, capture useful context,
-and receive evidence-based guidance while keeping the musician in control of
-interpretation and goals.
+Cello Practice AI is a planned score-aware performance analysis application for
+solo cello students. A student uploads a MusicXML score, records a performance
+directly through the device microphone, saves and replays the recording, and—in
+later versions—receives feedback tied to the notes and measures in the score.
 
-This repository is currently in the documentation and planning phase. It does
-not yet contain a frontend, backend, trained model, or validated analysis
-results.
+The project is currently in the documentation phase. No application code or
+validated analysis results exist yet.
 
-## Project goals
+## Product direction
 
-- Make deliberate practice easier to plan and sustain.
-- Help cellists turn broad goals into focused, time-bounded exercises.
-- Preserve a useful history of goals, observations, and progress.
-- Introduce audio-assisted feedback only when it can be presented with clear
-  limitations and confidence.
-- Protect musicians' recordings and practice data by design.
+The application is designed to:
 
-## Initial scope
+- accept MusicXML and present basic score information;
+- record through the device microphone without requiring manual WAV upload;
+- save and replay recorded performances;
+- compare performed audio with the uploaded score;
+- analyze pitch, intonation, rhythm, and dynamic contour in later versions;
+- identify repeated mistakes across performances; and
+- recommend specific measures for the student to isolate in practice.
 
-The proposed first release focuses on practice planning, session tracking,
-reflection, and a foundation for later audio analysis. Automated musical
-feedback is not assumed to be accurate or available until it has been designed,
-tested, and validated.
+Analysis must never be fabricated. If audio quality, score alignment, or an
+analysis stage is insufficient, the application must show an unavailable,
+uncertain, or failed state rather than inventing feedback.
+
+## First successful milestone
+
+A cellist records a simple passage and the application correctly identifies
+notes that are consistently sharp or flat.
+
+## Preferred technology direction
+
+- React with Next.js for the frontend
+- Python with FastAPI for the backend
+- Separate UI, audio-processing, and music-analysis/scoring layers
+
+These choices are the preferred starting architecture and should be confirmed
+through implementation discovery.
+
+## Roadmap summary
+
+- **Version 0.1:** MusicXML upload, basic score information, microphone
+  recording, saving, and replay.
+- **Version 0.2:** Pitch and intonation analysis, including sustained notes and
+  vibrato-center estimation.
+- **Version 0.3:** Score alignment, incorrect-note and intonation detection,
+  measure highlighting, and basic scoring.
+- **Version 0.4:** Rhythm and timing analysis with allowance for expressive
+  timing.
+- **Version 0.5:** Dynamic contour and phrase-shape observations.
 
 ## Documentation
 
@@ -31,13 +56,7 @@ tested, and validated.
 - [Architecture](docs/Architecture.md)
 - [Version roadmap](docs/VersionRoadmap.md)
 
-## Project status
+## Status
 
-Planning only. Product and technical decisions in these documents are proposals
-and may change as user research and implementation begin.
-
-## Contributing
-
-Before application development starts, proposed changes should be discussed in
-an issue or pull request and checked against the product requirements,
-architecture constraints, privacy expectations, and current roadmap.
+Documentation and design only. Planned features are not represented as complete
+or validated.

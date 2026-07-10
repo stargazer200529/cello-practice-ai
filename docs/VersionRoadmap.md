@@ -2,146 +2,143 @@
 
 ## 1. Purpose
 
-This roadmap describes a proposed sequence, not committed dates or completed
-work. Each version should advance only after its exit criteria are met. Scope may
-change based on user research, technical discovery, accessibility review, and
-privacy or security findings.
+This roadmap sequences the score-aware cello performance analysis product from
+recording foundations through pitch, score alignment, rhythm, and dynamics.
+Versions describe intended scope, not completed work or committed dates.
 
-## 2. Guiding sequence
+## 2. Version 0.1: Score and recording foundation
 
-The project should establish useful practice workflows before adding automated
-audio feedback. This creates value without depending on unvalidated analysis and
-provides the product context needed to evaluate later features responsibly.
+### Scope
 
-## 3. Phase 0: Discovery and foundations
+- User interface for a solo cello student.
+- MusicXML upload.
+- Basic score information.
+- Direct device-microphone recording.
+- Save the recording with its score context.
+- Replay the saved recording.
 
-### Goals
-
-- Validate the primary user group and highest-value practice problems.
-- Choose the initial delivery platform.
-- Define privacy, accessibility, and data-retention expectations.
-- Establish the product vocabulary and core data model.
-- Identify candidate audio features without promising their accuracy.
-
-### Deliverables
-
-- User research plan and findings.
-- Prioritized initial-release scope.
-- Architecture decision records for key technology choices.
-- Initial threat model and data inventory.
-- Accessibility plan.
-- Measurement and evaluation plan.
+Manual WAV upload is not required. Performance analysis is not included in this
+version, and the interface must not display placeholder analysis results.
 
 ### Exit criteria
 
-- The initial user and problem statement are supported by research.
-- Open product questions that affect platform architecture are resolved.
-- Privacy-sensitive data flows are identified and reviewed.
-- Initial success measures have baselines or a plan to establish them.
+- A supported MusicXML file can be validated and its basic information shown.
+- A student can grant microphone access, record, stop, and save a passage.
+- A confirmed saved recording can be replayed and deleted.
+- Unsupported score, permission, recording, storage, and playback failures are
+  explicit and recoverable.
+- Scores and recordings are private and authorized by ownership.
 
-## 4. Version 0.1: Practice planning
+## 3. Version 0.2: Pitch and intonation foundation
 
-### Proposed scope
+### Scope
 
-- Create and manage practice goals.
-- Create an editable, time-bounded session plan.
-- Run a session with simple activity timing controls.
-- Record notes, reflections, and next steps.
-- Review a basic session history.
-- Export and delete user-created practice data.
-
-### Explicit exclusions
-
-- Automated audio analysis.
-- Teacher dashboards.
-- Social feeds, rankings, and public profiles.
+- Pitch detection.
+- Frequency-to-note conversion.
+- Cents sharp/flat calculation.
+- Sustained-note handling.
+- Vibrato-center estimation.
 
 ### Exit criteria
 
-- Critical planning and session journeys pass usability testing.
-- Accessibility checks cover the supported interaction paths.
-- Authorization, export, and deletion behavior are tested.
-- No feature implies that musical performance was analyzed.
+- Evaluation defines supported pitch range, audio conditions, reference tuning,
+  ground truth, and error thresholds.
+- Sustained notes produce stable note-level observations rather than an event per
+  analysis frame.
+- Vibrato-center estimation is evaluated separately from instantaneous pitch.
+- Low-quality or unsupported audio produces no fabricated intonation result.
 
-## 5. Version 0.2: Practice continuity
+### First successful milestone
 
-### Proposed scope
+A cellist records a simple passage and the application correctly identifies
+notes that are consistently sharp or flat.
 
-- Reusable routines and templates.
-- Better filtering by repertoire item, technique, goal, and date.
-- User-controlled reminders.
-- Progress summaries derived from recorded practice activity.
-- Reliability improvements for interrupted or offline sessions, as appropriate
-  for the chosen platform.
+Success must be demonstrated against predefined passages and ground truth across
+repeated trials. This roadmap does not claim that the milestone has been met.
 
-### Exit criteria
+## 4. Version 0.3: Score alignment and basic scoring
 
-- Summary labels clearly distinguish logged activity from musical assessment.
-- Reminder behavior is opt-in and controllable.
-- Session data survives the documented interruption scenarios.
-- Users can understand and use history to plan a subsequent session.
+### Scope
 
-## 6. Version 0.3: Recording foundation
-
-### Proposed scope
-
-- Explicit audio capture or upload.
-- Private playback and recording management.
-- Configurable retention and deletion controls.
-- Asynchronous processing states without musical feedback.
-- Internal evaluation tooling separated from user-facing results.
+- Align performed notes to MusicXML notes.
+- Detect incorrect notes and supported intonation problems.
+- Highlight measures needing work.
+- Provide basic, explainable scoring.
+- Identify repeated supported mistakes across comparable recordings.
+- Recommend specific measures to isolate.
 
 ### Exit criteria
 
-- Recording consent, access, retention, export, and deletion flows are reviewed.
-- Threat modeling and security testing cover the media pipeline.
-- Failed processing never appears as a successful result.
-- Supported devices and recording-quality constraints are documented.
+- Alignment accuracy is evaluated for the supported notation and performance
+  conditions.
+- Incorrect-note and intonation observations link to notated events and measures.
+- Partial, ambiguous, and failed alignment states are visible.
+- Basic scores expose their inputs and do not imply a complete assessment of
+  musical quality.
+- Repeated-mistake rules use documented evidence and minimum attempt counts.
+- Measure recommendations link to the observations that support them.
 
-## 7. Version 0.4: Limited audio-assisted feedback
+## 5. Version 0.4: Rhythm and timing analysis
 
-### Proposed scope
+### Scope
 
-- One or more narrowly defined metrics selected after evaluation.
-- Plain-language explanations of what each metric can and cannot indicate.
-- Input-quality checks and uncertainty states.
-- User controls to dismiss, annotate, or delete results.
-- Versioned analysis results and monitoring for operational failures.
-
-Candidate metrics are intentionally not selected in this roadmap; selection
-requires evidence that a method is useful and sufficiently reliable for the
-target users and recording conditions.
+- Rhythm and timing analysis.
+- Early and late entrance detection.
+- Note-duration comparison.
+- Tempo-drift analysis.
+- Allowance for reasonable expressive timing.
 
 ### Exit criteria
 
-- Each exposed metric has documented datasets, evaluation methods, thresholds,
-  and known failure modes.
-- Product testing shows users understand the metric's limitations.
-- Privacy, accessibility, security, and deletion requirements remain satisfied.
-- Release communication avoids claims not supported by the evaluation.
+- Timing is compared using score tempo, meter, and alignment context.
+- Tolerances distinguish supported errors from reasonable expressive variation.
+- Early/late, duration, and drift observations include units and reference points.
+- Rubato, pauses, ties, rests, and tempo changes have documented behavior for the
+  supported notation subset.
+- Insufficient alignment prevents unsupported rhythm conclusions.
 
-## 8. Future possibilities
+## 6. Version 0.5: Dynamic contour and phrase shape
 
-The following ideas require separate discovery and are not commitments:
+### Scope
 
-- teacher-student sharing with granular permission controls;
-- score- or passage-aware practice organization;
-- comparison of user-selected takes;
-- more responsive feedback during practice; and
-- integrations with calendars, notation tools, or learning platforms.
+- Dynamic contour visualization.
+- Crescendo and diminuendo analysis.
+- Dynamic contrast observations.
+- Phrase-shape observations.
 
-## 9. Release governance
+### Exit criteria
 
-For every version:
+- The system distinguishes relative contour from absolute sound level.
+- Evaluation addresses microphone placement, device gain, automatic gain
+  control, and room effects.
+- Crescendo, diminuendo, and contrast observations link to score locations when
+  notation supports the comparison.
+- Phrase-shape language remains observational and avoids unsupported judgments.
+- Unreliable amplitude input produces an explicit unavailable or uncertain state.
 
-1. Confirm scope against the product principles.
-2. Document relevant architecture and privacy decisions.
-3. Define measurable acceptance criteria before implementation is considered
-   complete.
-4. Test accessibility and critical user journeys.
-5. Record known limitations and unresolved risks.
-6. Release behind appropriate safeguards when evidence is incomplete.
-7. Review observed outcomes before expanding scope.
+## 7. Cross-version requirements
 
-The roadmap should be updated when evidence changes priorities; it should not be
-used to imply that planned features or outcomes already exist.
+Every version must:
+
+1. keep MusicXML and recordings private by default;
+2. preserve score, recording, and analysis-version traceability;
+3. expose processing, unsupported, uncertain, failed, and deleted states;
+4. avoid fake analysis results and placeholder measurements;
+5. test accessibility and critical user journeys;
+6. document supported devices, notation, and known failure modes; and
+7. validate analysis claims before presenting them as reliable.
+
+## 8. Release governance
+
+Before advancing a version:
+
+1. Define ground truth, evaluation data, and acceptance thresholds for new
+   analysis capabilities.
+2. Review privacy, security, and retention impacts.
+3. Test layer contracts between the React/Next.js UI, FastAPI backend,
+   audio-processing layer, and music-analysis/scoring layer.
+4. Review error messages and user-facing limitations with solo cello students.
+5. Record unresolved risks and constrain the release accordingly.
+
+The roadmap should change when evidence changes priorities. It must not be used
+to imply that a planned capability or result already exists.

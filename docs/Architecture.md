@@ -1,178 +1,222 @@
 # Architecture
 
-## 1. Status
+## 1. Status and goals
 
-This document describes a proposed architecture for planning purposes. No
-application components or analysis pipeline are implemented yet. Technology
-choices remain open until product requirements and delivery constraints are
-validated.
+This is the preferred architecture for a score-aware cello performance analysis
+application. It is a design proposal; no application components or analysis
+results are implemented yet.
 
-## 2. Architectural goals
+The architecture should:
 
-- Keep core practice planning usable independently of audio analysis.
-- Isolate private recordings from routine application data and logs.
-- Support asynchronous analysis without implying that pending or failed work
-  succeeded.
-- Make analysis outputs traceable to a method and version.
-- Allow components to evolve without requiring a premature distributed system.
-- Support deletion across source recordings, derived artifacts, and metadata.
+- support MusicXML upload and score-aware data structures;
+- record directly through a device microphone, then save and replay audio;
+- keep the user interface separate from audio processing and musical scoring;
+- support asynchronous, versioned analysis without fabricated fallback results;
+- preserve traceability from observations to score notes and measures; and
+- allow pitch, alignment, rhythm, and dynamics capabilities to evolve
+  independently.
 
-## 3. Proposed system context
+## 2. Preferred technology stack
 
-The system may contain the following logical boundaries:
+- **Frontend:** React with Next.js and browser media APIs.
+- **Backend:** Python with FastAPI.
+- **Storage:** a relational database for metadata plus private object storage for
+  MusicXML and recordings.
+- **Background work:** a job queue and Python analysis workers when analysis is
+  introduced.
 
-1. **Client application** for goals, session plans, timers, notes, history, and
-   explicit recording controls.
-2. **Application API** for authenticated operations and product rules.
-3. **Primary data store** for users, goals, sessions, consent records, and
-   analysis metadata.
-4. **Private object storage** for recordings and derived media artifacts.
-5. **Analysis worker** for asynchronous, versioned audio processing.
-6. **Job queue** connecting analysis requests to workers with retry and failure
-   handling.
-7. **Operational telemetry** for service health, excluding raw recordings and
-   sensitive note content by default.
+Specific libraries, infrastructure providers, and deployment targets remain
+implementation decisions.
 
-These are logical responsibilities, not a requirement to deploy seven separate
-services. A modular monolith plus a background worker is the preferred starting
-shape unless scale or isolation requirements demonstrate otherwise.
+## 3. Layered design
 
-## 4. Component responsibilities
+### 3.1 UI layer
 
-### Client application
+The React/Next.js frontend is responsible for:
 
-- Present practice planning and session workflows.
-- Make offline or interrupted-session behavior understandable.
-- Request microphone or file access only in context.
-- Clearly label user-entered information, generated suggestions, and computed
-  observations.
-- Provide export and deletion controls.
+- MusicXML selection and upload status;
+- basic score information and later score-linked highlights;
+- microphone permission and recording controls;
+- local recording-state feedback;
+- saved recording playback;
+- analysis progress, limitations, results, and measure recommendations; and
+- accessible interaction and error recovery.
 
-### Application API
+It must not invent analysis values when the backend returns pending, uncertain,
+unsupported, or failed states.
 
-- Authenticate users and authorize access to each resource.
-- Validate session, goal, and recording metadata.
-- Issue short-lived upload and download permissions when object storage is used.
-- Create analysis jobs and expose explicit queued, running, completed, failed,
-  and deleted states.
-- Coordinate user data export and deletion.
+### 3.2 Application/API layer
 
-### Analysis worker
+The FastAPI backend is responsible for:
 
-- Consume immutable job inputs.
-- Validate media before processing.
-- Produce structured observations with method version, units, confidence or
-  quality indicators, and failure details.
-- Avoid converting a failed or unsupported measurement into a placeholder
-  success value.
-- Keep experimentation separate from production-facing analysis versions.
+- authentication and resource authorization;
+- score and recording lifecycle APIs;
+- MusicXML validation and orchestration;
+- issuing narrowly scoped upload and playback access;
+- persisting recording-to-score relationships;
+- creating analysis jobs and exposing state transitions; and
+- coordinating export, retention, and deletion.
+
+This layer should not contain UI presentation logic or tightly couple API routes
+to a particular signal-processing implementation.
+
+### 3.3 Audio-processing layer
+
+The audio-processing layer is responsible for:
+
+- decoding the browser-recorded supported audio format;
+- validating duration, sample properties, clipping, and signal quality;
+- channel handling, resampling, and normalization where appropriate;
+- deriving time-based audio representations;
+- pitch tracking and note-event segmentation; and
+- later timing and loudness-envelope feature extraction.
+
+Processing must retain enough metadata to reproduce a result and must report
+unsupported or low-quality input rather than manufacturing measurements.
+
+### 3.4 Music-analysis and scoring layer
+
+The music-analysis/scoring layer is responsible for:
+
+- representing MusicXML notes, rests, measures, tempo, meter, and dynamics;
+- converting pitch tracks into note and cents observations;
+- handling sustained notes and estimating vibrato center;
+- aligning performed events with notated events;
+- classifying supported note, intonation, rhythm, and contour deviations;
+- aggregating observations by measure and across comparable recordings;
+- identifying repeated mistakes and recommending measures to isolate; and
+- generating explainable basic scoring only when evidence is sufficient.
+
+Musical rules and thresholds belong here rather than in UI components or API
+controllers.
+
+## 4. Supporting components
+
+- **MusicXML parser:** validates and converts supported notation into an
+  internal score representation.
+- **Relational database:** stores users, score metadata, recordings, analysis
+  jobs, results, and method versions.
+- **Private object storage:** stores original MusicXML and recorded media.
+- **Job queue:** decouples API requests from longer analysis work.
+- **Analysis workers:** execute versioned pipelines outside request/response
+  processing.
+- **Operational telemetry:** reports service health while excluding raw audio
+  and complete score content from routine logs.
+
+A modular monolith for the Next.js and FastAPI product surfaces plus a separate
+Python worker is an appropriate initial deployment shape. Logical layers should
+remain separate even if they share a repository or deployment unit initially.
 
 ## 5. Conceptual data model
 
-- **User:** identity, preferences, and privacy settings.
-- **PracticeGoal:** user-defined objective, status, and optional associations.
-- **RepertoireItem:** a user-defined piece, movement, excerpt, exercise, or
-  technique label.
-- **PracticeSession:** planned and actual timing plus lifecycle state.
-- **SessionActivity:** ordered unit within a session plan.
-- **Reflection:** user-authored notes and next steps.
-- **Recording:** ownership, storage reference, retention choice, and capture
-  metadata.
-- **AnalysisJob:** processing state, input reference, method version, and error
+- **User:** identity and privacy preferences.
+- **Score:** ownership, original MusicXML reference, parsed version, and status.
+- **ScorePart:** instrument/part metadata and selection state.
+- **Measure:** stable number or identifier, meter, key, tempo context, and
+  location.
+- **NotatedEvent:** pitch, onset, duration, voice, ties, and notation metadata.
+- **Recording:** owner, score, passage, media reference, format, duration, and
+  capture metadata.
+- **AnalysisJob:** pipeline type, state, input versions, timestamps, and error
   category.
-- **AnalysisResult:** structured observations and uncertainty information.
-- **ConsentRecord:** the user's decision for an optional use of recording data.
+- **PerformedEvent:** estimated onset, duration, pitch, and quality fields.
+- **Alignment:** relationship between performed and notated events with
+  confidence.
+- **Observation:** typed deviation with units, evidence, score location, and
+  method version.
+- **MeasureRecommendation:** measure, supporting observations, recurrence data,
+  and explanation.
 
-Identifiers should be non-guessable. Ownership must be checked server-side for
-every user resource.
+## 6. Primary data flows
 
-## 6. Key data flows
+### 6.1 Upload MusicXML
 
-### Save a practice session
+1. The UI sends the selected MusicXML file to the FastAPI backend.
+2. The backend validates size and type, stores the original privately, and
+   invokes the supported parser.
+3. Parsed score entities are stored with parser-version metadata.
+4. The API returns basic score information or an explicit unsupported/failed
+   state.
 
-1. The client creates or updates an in-progress session.
-2. The API validates ownership and lifecycle transitions.
-3. Structured session data and reflections are stored.
-4. The client receives the authoritative saved state.
+### 6.2 Record, save, and replay
 
-### Analyze a recording
+1. The student initiates recording and grants microphone permission.
+2. The browser records in a supported format; no manual WAV upload is required.
+3. The UI uploads the captured media with score and passage identifiers.
+4. The backend validates and privately stores the recording.
+5. The UI receives a confirmed saved state and authorized playback access.
+6. The student replays or deletes the recording.
 
-1. The user explicitly initiates capture or upload.
-2. The API records the user's storage and processing choices.
-3. The recording is stored privately and an analysis job is queued.
-4. A worker validates and processes the recording using a versioned method.
-5. The result or failure state is stored without overwriting the source record.
-6. The client displays the outcome and relevant limitations.
+The application must not report “saved” before persistence is confirmed.
 
-### Delete recording data
+### 6.3 Analyze against the score
 
-1. The user requests deletion.
-2. The API revokes access and marks the resource unavailable.
-3. Source and derived objects are deleted according to the documented process.
-4. Related results are deleted or irreversibly de-identified as policy permits.
-5. Completion or an actionable failure is surfaced to the user.
+1. The backend creates a versioned analysis job for a recording and parsed
+   score.
+2. The audio-processing layer validates and extracts supported features.
+3. The music-analysis layer creates performed events and aligns them to score
+   events.
+4. Supported observations are stored with quality and confidence information.
+5. The API exposes completed, partial/uncertain, unsupported, or failed output.
+6. The UI links observations to notes and measures without filling missing data.
 
-Backup expiration and legal retention constraints must be documented before
-launch.
+### 6.4 Detect repeated mistakes
 
-## 7. Security and privacy baseline
+1. Eligible observations are grouped across recordings of the same score
+   passage and compatible analysis version.
+2. A documented recurrence rule identifies consistent patterns.
+3. Measures are ranked using evidence quality and recurrence, not a fabricated
+   value.
+4. Recommendations retain links to the supporting recordings and observations.
 
-- Use established identity and session-management libraries.
-- Enforce authorization at the API boundary rather than relying on client UI.
-- Encrypt transport and use managed encryption for stored data.
-- Separate object identifiers from publicly accessible URLs.
-- Use short-lived, narrowly scoped access for recording transfer.
-- Exclude recordings, access tokens, and free-form practice notes from normal
+## 7. Analysis pipeline evolution
+
+- **Version 0.1:** no performance analysis; score, recording, save, and replay
+  foundations only.
+- **Version 0.2:** pitch tracking, note conversion, cents, sustained-note logic,
+  and vibrato-center estimation.
+- **Version 0.3:** score alignment, note/intonation observations, measure
+  highlighting, and basic scoring.
+- **Version 0.4:** rhythm and timing features with expressive-timing tolerance.
+- **Version 0.5:** loudness contour, dynamics, and phrase-shape observations.
+
+Each pipeline result should include input identifiers, score parser version,
+analysis version, reference tuning, units, quality indicators, and timestamps.
+
+## 8. Security and privacy
+
+- Enforce ownership checks for every score, recording, and result.
+- Keep stored media and MusicXML private; use short-lived access for transfer and
+  playback.
+- Protect data in transit and at rest using platform-appropriate controls.
+- Exclude raw audio, full score content, tokens, and result payloads from routine
   logs.
-- Audit administrative access and sensitive data operations.
-- Document retention, export, deletion, and incident-response procedures.
-- Perform threat modeling before enabling recording uploads in production.
+- Validate file type and size and isolate media parsing from public request
+  handling.
+- Document retention, export, deletion, and backup expiration before release.
+- Do not train models on user data without separate informed consent.
 
-## 8. Analysis integrity
+## 9. Quality and validation
 
-Every production-facing result should include enough metadata to determine:
+- Unit tests for score parsing, conversions, musical rules, and state machines.
+- Integration tests for upload, authorization, storage, playback, and deletion.
+- Contract tests between UI, FastAPI, audio processing, and scoring layers.
+- End-to-end tests for MusicXML upload and record/save/replay.
+- Curated evaluation passages and ground truth for each analysis stage.
+- Device and microphone coverage for supported recording environments.
+- Explicit false-positive, false-negative, and insufficient-signal behavior.
 
-- the analysis method and version;
-- when the analysis ran;
-- the units and interpretation of each value;
-- whether input quality was sufficient;
-- the confidence or known limitations, where applicable; and
-- whether the result was superseded or invalidated.
+The first analysis milestone must be validated before it is claimed: a cellist
+records a simple passage and the application correctly identifies notes that are
+consistently sharp or flat.
 
-Model or algorithm evaluation datasets, acceptance thresholds, and known failure
-modes must be documented before an analysis feature is represented as reliable.
+## 10. Decisions still required
 
-## 9. Deployment approach
-
-The first implementation should favor a small number of deployable units:
-
-- a client;
-- an application/API service; and
-- a background worker introduced only when asynchronous processing is needed.
-
-Managed relational storage, object storage, and queueing are reasonable default
-categories, but providers and frameworks are intentionally undecided. Separate
-development, test, and production environments should use independent secrets
-and data.
-
-## 10. Quality strategy
-
-- Unit tests for product rules and state transitions.
-- Integration tests for persistence, authorization, upload, and deletion flows.
-- Contract tests between the client, API, and worker.
-- End-to-end tests for critical practice and privacy journeys.
-- Evaluation suites for each audio method before product exposure.
-- Accessibility, security, and recovery checks before release.
-
-## 11. Decisions still required
-
-- Delivery platform and client framework.
-- Hosting environment and regional requirements.
-- Identity and account model.
-- Local-first versus server-synchronized data behavior.
-- Recording formats, limits, and retention defaults.
-- Initial analysis methods and their validation standards.
-- Export schema and deletion service-level objectives.
-
-Significant decisions should be recorded as architecture decision records when
-implementation begins.
+- Supported MusicXML versions and notation subset.
+- Browser-recorded media format and transcoding policy.
+- Score rendering and passage-selection approach.
+- Pitch-detection and alignment algorithms.
+- Reference tuning and temperament defaults.
+- Recurrence thresholds for repeated mistakes.
+- Storage retention and regional hosting requirements.
+- Evaluation datasets and acceptance thresholds for each version.
