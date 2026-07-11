@@ -1,3 +1,13 @@
+export interface PracticeRecording {
+  id: string;
+  pieceId: string;
+  createdAt: string;
+  durationMs: number;
+  mimeType: string;
+  blob: Blob;
+  objectUrl: string;
+}
+
 export interface Piece {
   id: string;
   title: string | null;
@@ -8,6 +18,7 @@ export interface Piece {
   keySignatures: string[];
   originalFilename: string;
   musicXML: string;
+  practiceRecording: PracticeRecording | null;
 }
 
 export interface ScoreMetadataResponse {
@@ -34,5 +45,6 @@ export function createTemporaryPiece(
     keySignatures: metadata.key_signatures,
     originalFilename,
     musicXML,
+    practiceRecording: null,
   };
 }
