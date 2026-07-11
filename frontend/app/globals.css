@@ -142,6 +142,18 @@ dd {
   margin: 0;
 }
 
+.score-viewer { background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; margin-top: 1.25rem; overflow: hidden; padding: 1.25rem; }
+.score-viewer-header { align-items: end; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+.score-viewer-header h2 { margin: 0; }
+.zoom-controls { align-items: center; border: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0; padding: 0; }
+.zoom-controls legend { color: var(--muted); float: left; font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem; text-transform: uppercase; }
+.zoom-button, .zoom-active { padding: 0.45rem 0.65rem; }
+.zoom-button { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.zoom-active { background: var(--accent); border: 1px solid var(--accent); }
+.render-message { color: var(--muted); }
+.score-canvas { margin-top: 1rem; min-height: 10rem; overflow-x: auto; width: 100%; }
+.score-canvas > div { margin-inline: auto; }
+
 .status {
   font-size: 1.1rem;
   font-weight: 700;
@@ -177,4 +189,5 @@ button:focus-visible {
     align-items: stretch;
     flex-direction: column;
   }
+  dl div { gap: 0.35rem; grid-template-columns: 1fr; }
 }

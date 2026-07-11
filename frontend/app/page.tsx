@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { ScoreViewer } from "../components/ScoreViewer";
 
 type ConnectionState = "checking" | "connected" | "unavailable";
 type UploadState = "idle" | "uploading" | "success" | "error";
@@ -58,6 +59,7 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [metadata, setMetadata] = useState<ScoreMetadata | null>(null);
+  const [scoreXML, setScoreXML] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const checkBackend = useCallback(async () => {
@@ -86,6 +88,7 @@ export default function Home() {
     setUploadState("uploading");
     setUploadError(null);
     setMetadata(null);
+    setScoreXML(null);
     const data = new FormData();
     data.append("file", file);
 
@@ -96,6 +99,7 @@ export default function Home() {
       });
       if (!response.ok) throw new Error(await errorMessage(response));
       setMetadata((await response.json()) as ScoreMetadata);
+      setScoreXML(await file.text());
       setUploadState("success");
     } catch (error) {
       setUploadState("error");
@@ -145,6 +149,7 @@ export default function Home() {
               setUploadState("idle");
               setUploadError(null);
               setMetadata(null);
+              setScoreXML(null);
             }}
           />
           <button type="submit" disabled={uploadState === "uploading"}>
@@ -167,6 +172,7 @@ export default function Home() {
               </dl>
             </section>
           )}
+          {scoreXML && <ScoreViewer musicXML={scoreXML} />}
         </div>
       </section>
     </main>
