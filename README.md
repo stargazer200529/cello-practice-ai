@@ -59,9 +59,10 @@ through implementation discovery.
 ## Local development
 
 The repository contains separate frontend and backend applications. The current
-foundation implements a local health check plus in-memory MusicXML upload and
-basic score metadata parsing. It does not implement score rendering, recording,
-storage, analysis, scoring, authentication, a database, or deployment.
+foundation implements a local health check, in-memory MusicXML upload, basic
+metadata parsing, and browser rendering with OpenSheetMusicDisplay. It does not
+implement playback, highlighting, recording, storage, analysis, scoring,
+authentication, a database, or deployment.
 
 ### Prerequisites
 
@@ -96,6 +97,9 @@ pnpm dev
 Open `http://localhost:3000`. The page checks the backend health endpoint and
 reports whether it can connect. To use a different backend URL, copy
 `frontend/.env.local.example` to `frontend/.env.local` and edit the value.
+
+For a manual upload test, use
+`sample-data/musicxml/twinkle-twinkle-little-star.musicxml`.
 
 ### Run checks
 
