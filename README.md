@@ -60,8 +60,9 @@ through implementation discovery.
 
 The repository contains separate frontend and backend applications. The current
 foundation implements a local health check, in-memory MusicXML upload, basic
-metadata parsing, and browser rendering with OpenSheetMusicDisplay. It does not
-implement playback, highlighting, recording, storage, analysis, scoring,
+metadata parsing, browser rendering with OpenSheetMusicDisplay, and temporary
+in-browser microphone recording and replay. It does not implement manual audio
+upload, backend recording storage, persistence, highlighting, analysis, scoring,
 authentication, a database, or deployment.
 
 The frontend is organized around one temporary in-memory Piece workspace:
@@ -71,7 +72,9 @@ The frontend is organized around one temporary in-memory Piece workspace:
 - `/pieces/[id]` shows its metadata, score, and future-feature tabs.
 
 Refreshing or restarting can clear the Piece. Persistence and a multi-piece
-library are intentionally not implemented yet.
+library are intentionally not implemented yet. The active Piece may retain one
+temporary practice recording while its workspace remains open; its object URL
+and audio data are released when replaced, discarded, or the app unmounts.
 
 ### Prerequisites
 

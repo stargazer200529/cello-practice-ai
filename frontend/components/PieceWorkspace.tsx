@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { ScoreViewer } from "./ScoreViewer";
+import { PracticeRecorder } from "./PracticeRecorder";
 import { usePieceWorkspace } from "./PieceProvider";
 
 const TABS = ["Practice", "Score", "Recordings", "Analysis", "Progress"] as const;
@@ -16,7 +17,7 @@ function Values({ values }: { values: string[] }) {
 
 export function PieceWorkspace() {
   const params = useParams<{ id: string }>();
-  const { activePiece } = usePieceWorkspace();
+  const { activePiece, setPracticeRecording } = usePieceWorkspace();
   const [tab, setTab] = useState<Tab>("Score");
   const piece = activePiece?.id === params.id ? activePiece : null;
 
@@ -37,7 +38,9 @@ export function PieceWorkspace() {
         {TABS.map((item) => <button key={item} type="button" aria-current={tab === item ? "page" : undefined}
           className={tab === item ? "tab-active" : "tab"} onClick={() => setTab(item)}>{item}</button>)}
       </nav>
-      {tab === "Score" ? <div><section className="metadata-card" aria-labelledby="metadata-title">
+      {tab === "Practice" ? <PracticeRecorder pieceId={piece.id} recording={piece.practiceRecording}
+        onRecordingChange={setPracticeRecording} />
+      : tab === "Score" ? <div><section className="metadata-card" aria-labelledby="metadata-title">
         <h2 id="metadata-title">Score metadata</h2><dl>
           <div><dt>Original file</dt><dd>{piece.originalFilename}</dd></div>
           <div><dt>Parts</dt><dd><Values values={piece.partNames} /></dd></div>
