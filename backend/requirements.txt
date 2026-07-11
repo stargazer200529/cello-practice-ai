@@ -1,2 +1,4 @@
+defusedxml==0.7.1
 fastapi==0.121.1
+python-multipart==0.0.20
 uvicorn[standard]==0.38.0

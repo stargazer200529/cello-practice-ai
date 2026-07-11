@@ -58,10 +58,10 @@ through implementation discovery.
 
 ## Local development
 
-The repository contains separate frontend and backend applications. This first
-foundation implements only a local status page and backend health check. It does
-not implement MusicXML, recording, analysis, scoring, authentication,
-persistence, or deployment.
+The repository contains separate frontend and backend applications. The current
+foundation implements a local health check plus in-memory MusicXML upload and
+basic score metadata parsing. It does not implement score rendering, recording,
+storage, analysis, scoring, authentication, a database, or deployment.
 
 ### Prerequisites
 

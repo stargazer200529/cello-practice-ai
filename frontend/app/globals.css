@@ -58,7 +58,9 @@ h1 {
   max-width: 36rem;
 }
 
-.status-card {
+.status-card,
+.upload-card,
+.metadata-card {
   align-items: center;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -67,6 +69,77 @@ h1 {
   gap: 1.5rem;
   justify-content: space-between;
   padding: 1.25rem;
+}
+
+.upload-card,
+.metadata-card {
+  margin-top: 1.25rem;
+}
+
+.upload-card {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+label,
+h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.field-help {
+  color: var(--muted);
+  margin: 0.35rem 0 0;
+}
+
+input[type="file"] {
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  padding: 0.75rem;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.error-message {
+  background: #fff0f0;
+  border: 1px solid var(--error);
+  border-radius: 0.5rem;
+  color: var(--error);
+  margin: 1.25rem 0 0;
+  padding: 1rem;
+}
+
+.metadata-card {
+  display: block;
+}
+
+.metadata-card h2 {
+  margin: 0 0 1rem;
+}
+
+dl {
+  margin: 0;
+}
+
+dl div {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(8rem, 1fr) 2fr;
+  padding: 0.8rem 0;
+}
+
+dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+dd {
+  margin: 0;
 }
 
 .status {
