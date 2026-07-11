@@ -1,0 +1,17 @@
+# Frontend
+frontend/.next/
+frontend/node_modules/
+
+# Backend
+backend/.pytest_cache/
+backend/.venv/
+backend/**/__pycache__/
+backend/**/*.py[cod]
+
+# Local configuration
+.env
+.env.local
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db

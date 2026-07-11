@@ -56,7 +56,61 @@ through implementation discovery.
 - [Architecture](docs/Architecture.md)
 - [Version roadmap](docs/VersionRoadmap.md)
 
+## Local development
+
+The repository contains separate frontend and backend applications. This first
+foundation implements only a local status page and backend health check. It does
+not implement MusicXML, recording, analysis, scoring, authentication,
+persistence, or deployment.
+
+### Prerequisites
+
+- Node.js 20.9 or later and pnpm
+- Python 3.11 or later
+
+### Start the backend
+
+From the repository root:
+
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements-dev.txt
+python -m uvicorn app.main:app --reload
+```
+
+The API runs at `http://localhost:8000`. Its health endpoint is available at
+`http://localhost:8000/health`.
+
+### Start the frontend
+
+In a second terminal, from the repository root:
+
+```powershell
+cd frontend
+pnpm install
+pnpm dev
+```
+
+Open `http://localhost:3000`. The page checks the backend health endpoint and
+reports whether it can connect. To use a different backend URL, copy
+`frontend/.env.local.example` to `frontend/.env.local` and edit the value.
+
+### Run checks
+
+```powershell
+cd backend
+python -m pytest
+```
+
+```powershell
+cd frontend
+pnpm lint
+pnpm build
+```
+
 ## Status
 
-Documentation and design only. Planned features are not represented as complete
-or validated.
+The local frontend/backend foundation is implemented. Product capabilities in
+the roadmap remain planned and are not represented as complete or validated.
