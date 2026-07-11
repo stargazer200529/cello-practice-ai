@@ -62,9 +62,13 @@ The repository contains separate frontend and backend applications. The current
 foundation implements a local health check, in-memory MusicXML upload, basic
 metadata parsing, browser rendering with OpenSheetMusicDisplay, and temporary
 in-browser microphone recording and replay. Pieces and MusicXML files persist
-locally through SQLite and configurable backend filesystem storage. It does not implement manual audio
-upload, recording persistence, cloud storage, highlighting, analysis, scoring,
-authentication, a database, or deployment.
+locally through SQLite and configurable backend filesystem storage. It does not
+implement manual audio upload, recording persistence, cloud storage,
+highlighting, analysis, scoring, authentication, or cloud deployment.
+
+MusicXML upload accepts plain `.musicxml` and `.xml` files plus compressed `.mxl`
+containers. MXL container metadata selects the root score document before the
+existing parser validates and reads it.
 
 The frontend is organized around a persistent local Piece library:
 

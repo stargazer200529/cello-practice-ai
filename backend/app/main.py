@@ -10,24 +10,28 @@ from sqlalchemy.orm import Session
 
 from app.config import Settings
 from app.database import Database, PieceEntity, utc_now
-from app.musicxml import MusicXMLValidationError, parse_musicxml, validate_filename
+from app.musicxml import (
+    MAX_MUSICXML_BYTES,
+    MusicXMLValidationError,
+    musicxml_document,
+    musicxml_text,
+    parse_musicxml,
+    validate_filename,
+)
 from app.piece_repository import PieceRepository
 from app.piece_storage import PieceStorage
 
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+MAX_UPLOAD_BYTES = MAX_MUSICXML_BYTES
 
 
 def piece_response(piece: PieceEntity) -> dict[str, object]:
     def timestamp(value: datetime) -> str:
         return (value if value.tzinfo else value.replace(tzinfo=timezone.utc)).isoformat()
-
-    return {
-        "id": piece.id, "title": piece.title, "composer": piece.composer,
+    return {"id": piece.id, "title": piece.title, "composer": piece.composer,
         "original_filename": piece.original_filename, "part_names": piece.part_names,
         "measure_count": piece.measure_count, "time_signatures": piece.time_signatures,
         "key_signatures": piece.key_signatures, "created_at": timestamp(piece.created_at),
-        "updated_at": timestamp(piece.updated_at),
-    }
+        "updated_at": timestamp(piece.updated_at)}
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -51,39 +55,49 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def read_and_parse(file: UploadFile):
         validate_filename(file.filename)
         content = await file.read(MAX_UPLOAD_BYTES + 1)
-        if len(content) > MAX_UPLOAD_BYTES: raise MusicXMLValidationError("The MusicXML file must be 5 MB or smaller.")
-        if not content: raise MusicXMLValidationError("The uploaded MusicXML file is empty.")
-        return content, parse_musicxml(content)
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise MusicXMLValidationError("The MusicXML file must be 5 MB or smaller.")
+        if not content:
+            raise MusicXMLValidationError("The uploaded MusicXML file is empty.")
+        document = musicxml_document(file.filename or "", content)
+        text = musicxml_text(document)
+        return document, text, parse_musicxml(document)
 
     @app.post("/scores/metadata", tags=["scores"])
     async def score_metadata(file: UploadFile = File(...)) -> dict[str, object]:
         try:
-            _, metadata = await read_and_parse(file)
-            return asdict(metadata)
+            _, text, metadata = await read_and_parse(file)
+            return {**asdict(metadata), "musicxml": text}
         except MusicXMLValidationError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
-        finally: await file.close()
+        finally:
+            await file.close()
 
     @app.post("/pieces", status_code=201, tags=["pieces"])
     async def create_piece(file: UploadFile = File(...), session: Session = Depends(get_session)):
         stored_path: str | None = None
         try:
-            content, metadata = await read_and_parse(file)
+            document, _, metadata = await read_and_parse(file)
             piece_id = str(uuid4())
-            stored_path = storage.write(piece_id, Path(file.filename or "score.musicxml").suffix, content)
+            stored_path = storage.write(piece_id, ".musicxml", document)
             now = utc_now()
             piece = PieceEntity(id=piece_id, title=metadata.title, composer=metadata.composer,
                 original_filename=file.filename or "score.musicxml", musicxml_path=stored_path,
                 part_names=metadata.part_names, measure_count=metadata.measure_count,
                 time_signatures=metadata.time_signatures, key_signatures=metadata.key_signatures,
                 created_at=now, updated_at=now, archived=False)
-            try: return piece_response(PieceRepository(session).add(piece))
+            try:
+                return piece_response(PieceRepository(session).add(piece))
             except Exception:
-                session.rollback(); storage.delete(stored_path); raise
+                session.rollback()
+                storage.delete(stored_path)
+                raise
         except MusicXMLValidationError as error:
-            if stored_path: storage.delete(stored_path)
+            if stored_path:
+                storage.delete(stored_path)
             raise HTTPException(status_code=422, detail=str(error)) from error
-        finally: await file.close()
+        finally:
+            await file.close()
 
     @app.get("/pieces", tags=["pieces"])
     def list_pieces(session: Session = Depends(get_session)):
@@ -91,7 +105,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     def require_piece(piece_id: str, session: Session) -> PieceEntity:
         piece = PieceRepository(session).get_active(piece_id)
-        if not piece: raise HTTPException(status_code=404, detail="Piece not found.")
+        if not piece:
+            raise HTTPException(status_code=404, detail="Piece not found.")
         return piece
 
     @app.get("/pieces/{piece_id}", tags=["pieces"])
@@ -101,7 +116,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/pieces/{piece_id}/musicxml", response_class=PlainTextResponse, tags=["pieces"])
     def get_piece_musicxml(piece_id: str, session: Session = Depends(get_session)):
         piece = require_piece(piece_id, session)
-        try: return storage.read(piece.musicxml_path).decode("utf-8")
+        try:
+            return storage.read(piece.musicxml_path).decode("utf-8")
         except (FileNotFoundError, UnicodeDecodeError) as error:
             raise HTTPException(status_code=500, detail="Stored MusicXML is unavailable.") from error
 

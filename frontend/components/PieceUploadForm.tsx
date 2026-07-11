@@ -32,9 +32,9 @@ export function PieceUploadForm() {
   return (
     <form className="upload-card" onSubmit={(event) => void submit(event)}>
       <div><label htmlFor="score-file">MusicXML score</label>
-        <p className="field-help">Choose a .musicxml or .xml file, up to 5 MB.</p></div>
+        <p className="field-help">Choose a .musicxml, .xml, or compressed .mxl file, up to 5 MB.</p></div>
       <input id="score-file" type="file"
-        accept=".musicxml,.xml,application/vnd.recordare.musicxml+xml,application/xml,text/xml"
+        accept=".musicxml,.xml,.mxl,application/vnd.recordare.musicxml+xml,application/vnd.recordare.musicxml,application/xml,text/xml"
         onChange={(event) => { setFile(event.target.files?.[0] ?? null); setState("idle"); setError(null); }} />
       <button type="submit" disabled={state === "uploading"}>
         {state === "uploading" ? "Creating piece…" : "Create piece workspace"}

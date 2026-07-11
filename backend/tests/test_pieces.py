@@ -1,4 +1,6 @@
 from pathlib import Path
+from io import BytesIO
+from zipfile import ZipFile
 
 from fastapi.testclient import TestClient
 
@@ -18,6 +20,14 @@ def client_for(tmp_path: Path) -> TestClient:
 
 def upload(client: TestClient, filename: str = "study.musicxml", content: bytes = VALID_SCORE):
     return client.post("/pieces", files={"file": (filename, content, "application/xml")})
+
+
+def compressed_score() -> bytes:
+    output = BytesIO()
+    with ZipFile(output, "w") as archive:
+        archive.writestr("META-INF/container.xml", "<container><rootfiles><rootfile full-path='score/main.musicxml'/></rootfiles></container>")
+        archive.writestr("score/main.musicxml", VALID_SCORE)
+    return output.getvalue()
 
 
 def test_create_list_retrieve_content_and_delete(tmp_path: Path) -> None:
@@ -46,3 +56,16 @@ def test_invalid_upload_leaves_no_record_or_file(tmp_path: Path) -> None:
     assert response.status_code == 422
     assert client.get("/pieces").json() == []
     assert list((tmp_path / "scores").iterdir()) == []
+
+
+def test_compressed_mxl_persists_extracted_root_musicxml(tmp_path: Path) -> None:
+    client = client_for(tmp_path)
+    response = upload(client, "study.mxl", compressed_score())
+    assert response.status_code == 201
+    piece = response.json()
+    assert piece["original_filename"] == "study.mxl"
+    stored_files = list((tmp_path / "scores").iterdir())
+    assert len(stored_files) == 1
+    assert stored_files[0].suffix == ".musicxml"
+    assert stored_files[0].read_bytes() == VALID_SCORE
+    assert client.get(f"/pieces/{piece['id']}/musicxml").content == VALID_SCORE

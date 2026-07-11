@@ -135,7 +135,7 @@ export function PracticeRecorder({ pieceId, recording, onRecordingChange }: Prac
   return (
     <section className="practice-recorder" aria-labelledby="practice-title">
       <h2 id="practice-title">Practice recording</h2>
-      <p className="field-help">Record directly from this device. Audio remains only in this temporary Piece workspace.</p>
+      <p className="field-help">Record directly from this device. This practice audio remains temporary and is not saved with the Piece.</p>
       <div className="recorder-status" aria-live="polite">
         {state === "requesting" && "Requesting microphone permission…"}
         {state === "ready" && "Microphone ready."}
