@@ -64,6 +64,15 @@ metadata parsing, and browser rendering with OpenSheetMusicDisplay. It does not
 implement playback, highlighting, recording, storage, analysis, scoring,
 authentication, a database, or deployment.
 
+The frontend is organized around one temporary in-memory Piece workspace:
+
+- `/` introduces the current workflow.
+- `/pieces/new` creates a temporary Piece from MusicXML.
+- `/pieces/[id]` shows its metadata, score, and future-feature tabs.
+
+Refreshing or restarting can clear the Piece. Persistence and a multi-piece
+library are intentionally not implemented yet.
+
 ### Prerequisites
 
 - Node.js 20.9 or later and pnpm

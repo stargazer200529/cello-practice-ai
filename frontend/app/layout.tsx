@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { PieceProvider } from "../components/PieceProvider";
 
 export const metadata: Metadata = {
   title: "Cello Practice AI",
@@ -11,7 +12,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><PieceProvider>{children}</PieceProvider></body>
     </html>
   );
 }
