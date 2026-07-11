@@ -61,23 +61,23 @@ through implementation discovery.
 The repository contains separate frontend and backend applications. The current
 foundation implements a local health check, in-memory MusicXML upload, basic
 metadata parsing, browser rendering with OpenSheetMusicDisplay, and temporary
-in-browser microphone recording and replay. It does not implement manual audio
-upload, backend recording storage, persistence, highlighting, analysis, scoring,
-authentication, a database, or deployment.
+in-browser microphone recording and replay. Pieces and MusicXML files persist
+locally through SQLite and configurable backend filesystem storage. It does not
+implement manual audio upload, recording persistence, cloud storage,
+highlighting, analysis, scoring, authentication, or cloud deployment.
 
 MusicXML upload accepts plain `.musicxml` and `.xml` files plus compressed `.mxl`
 containers. MXL container metadata selects the root score document before the
 existing parser validates and reads it.
 
-The frontend is organized around one temporary in-memory Piece workspace:
+The frontend is organized around a persistent local Piece library:
 
-- `/` introduces the current workflow.
-- `/pieces/new` creates a temporary Piece from MusicXML.
+- `/` lists saved pieces in My Music.
+- `/pieces/new` creates a persistent Piece from MusicXML.
 - `/pieces/[id]` shows its metadata, score, and future-feature tabs.
 
-Refreshing or restarting can clear the Piece. Persistence and a multi-piece
-library are intentionally not implemented yet. The active Piece may retain one
-temporary practice recording while its workspace remains open; its object URL
+Piece metadata and MusicXML survive restarts. Practice recordings remain
+temporary while a workspace is open; their object URL
 and audio data are released when replaced, discarded, or the app unmounts.
 
 ### Prerequisites
@@ -96,6 +96,9 @@ python -m venv .venv
 python -m pip install -r requirements-dev.txt
 python -m uvicorn app.main:app --reload
 ```
+
+By default, SQLite and MusicXML files are created under `backend/data/`. Override
+them with `CELLO_DATABASE_URL` and `CELLO_MUSICXML_STORAGE_DIR`.
 
 The API runs at `http://localhost:8000`. Its health endpoint is available at
 `http://localhost:8000/health`.

@@ -1,11 +1,6 @@
 export interface PracticeRecording {
-  id: string;
-  pieceId: string;
-  createdAt: string;
-  durationMs: number;
-  mimeType: string;
-  blob: Blob;
-  objectUrl: string;
+  id: string; pieceId: string; createdAt: string; durationMs: number;
+  mimeType: string; blob: Blob; objectUrl: string;
 }
 
 export interface Piece {
@@ -17,35 +12,20 @@ export interface Piece {
   timeSignatures: string[];
   keySignatures: string[];
   originalFilename: string;
-  musicXML: string;
+  createdAt: string;
+  updatedAt: string;
   practiceRecording: PracticeRecording | null;
 }
 
-export interface ScoreMetadataResponse {
-  title: string | null;
-  composer: string | null;
-  part_names: string[];
-  measure_count: number;
-  time_signatures: string[];
-  key_signatures: string[];
-  musicxml: string;
+export interface PieceResponse {
+  id: string; title: string | null; composer: string | null;
+  part_names: string[]; measure_count: number; time_signatures: string[];
+  key_signatures: string[]; original_filename: string; created_at: string; updated_at: string;
 }
 
-export function createTemporaryPiece(
-  metadata: ScoreMetadataResponse,
-  originalFilename: string,
-  musicXML: string,
-): Piece {
-  return {
-    id: crypto.randomUUID(),
-    title: metadata.title,
-    composer: metadata.composer,
-    partNames: metadata.part_names,
-    measureCount: metadata.measure_count,
-    timeSignatures: metadata.time_signatures,
-    keySignatures: metadata.key_signatures,
-    originalFilename,
-    musicXML,
-    practiceRecording: null,
-  };
+export function pieceFromResponse(value: PieceResponse, recording: PracticeRecording | null = null): Piece {
+  return { id: value.id, title: value.title, composer: value.composer, partNames: value.part_names,
+    measureCount: value.measure_count, timeSignatures: value.time_signatures,
+    keySignatures: value.key_signatures, originalFilename: value.original_filename,
+    createdAt: value.created_at, updatedAt: value.updated_at, practiceRecording: recording };
 }

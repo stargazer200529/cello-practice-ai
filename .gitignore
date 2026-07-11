@@ -1,12 +1,14 @@
 # Frontend
 frontend/.next/
 frontend/node_modules/
+frontend/*.tsbuildinfo
 
 # Backend
 backend/.pytest_cache/
 backend/.venv/
 backend/**/__pycache__/
 backend/**/*.py[cod]
+backend/data/
 
 # Local configuration
 .env
