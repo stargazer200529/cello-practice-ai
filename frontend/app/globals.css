@@ -32,6 +32,19 @@ main {
   width: min(42rem, 100%);
 }
 
+.workspace-main { display: block; padding-block: 3rem; }
+.workspace { margin-inline: auto; max-width: 76rem; width: 100%; }
+.workspace-header { align-items: start; display: flex; gap: 2rem; justify-content: space-between; }
+.workspace-tabs { border-bottom: 1px solid var(--border); display: flex; gap: 0.25rem; margin-top: 2rem; overflow-x: auto; }
+.tab, .tab-active { border-radius: 0.4rem 0.4rem 0 0; padding: 0.7rem 1rem; }
+.tab { background: transparent; color: var(--text); }
+.tab-active { background: var(--accent); }
+.placeholder { background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; margin-top: 1.25rem; padding: 2rem; }
+.placeholder h2 { margin-top: 0; }
+.primary-link { background: var(--accent); border-radius: 0.4rem; color: white; display: inline-block; font-weight: 700; padding: 0.8rem 1rem; text-decoration: none; }
+.temporary-note { color: var(--muted); font-size: 0.9rem; line-height: 1.5; margin: 1.25rem 0; }
+.page-eyebrow { margin-top: 2rem; }
+
 .eyebrow,
 .status-label {
   color: var(--muted);
@@ -190,4 +203,5 @@ button:focus-visible {
     flex-direction: column;
   }
   dl div { gap: 0.35rem; grid-template-columns: 1fr; }
+  .workspace-header { flex-direction: column; }
 }
