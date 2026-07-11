@@ -72,6 +72,22 @@ def test_upload_rejects_malformed_xml() -> None:
     assert response.json() == {"detail": "The uploaded file is not valid XML."}
 
 
+def test_upload_rejects_xml_entity_declarations() -> None:
+    response = upload(
+        b"""<?xml version="1.0"?>
+        <!DOCTYPE score-partwise [<!ENTITY unsafe "entity content">]>
+        <score-partwise>
+          <part-list><score-part id="P1"><part-name>&unsafe;</part-name></score-part></part-list>
+          <part id="P1"><measure number="1"/></part>
+        </score-partwise>"""
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": "The uploaded XML contains unsupported external or entity content."
+    }
+
+
 def test_upload_rejects_non_musicxml_xml() -> None:
     response = upload(b"<catalog><item>Not a score</item></catalog>", "catalog.xml")
 

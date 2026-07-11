@@ -4,6 +4,7 @@ from pathlib import Path
 from xml.etree.ElementTree import Element
 
 from defusedxml import ElementTree
+from defusedxml.common import DefusedXmlException
 
 SUPPORTED_EXTENSIONS = {".musicxml", ".xml"}
 
@@ -34,7 +35,7 @@ def parse_musicxml(content: bytes) -> ScoreMetadata:
         root = ElementTree.parse(BytesIO(content)).getroot()
     except ElementTree.ParseError as error:
         raise MusicXMLValidationError("The uploaded file is not valid XML.") from error
-    except ElementTree.DefusedXmlException as error:
+    except DefusedXmlException as error:
         raise MusicXMLValidationError(
             "The uploaded XML contains unsupported external or entity content."
         ) from error
