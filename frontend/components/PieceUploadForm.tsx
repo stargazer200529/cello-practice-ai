@@ -3,20 +3,8 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { createTemporaryPiece, ScoreMetadataResponse } from "../models/piece";
+import { createPiece } from "../lib/pieces";
 import { usePieceWorkspace } from "./PieceProvider";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-async function errorMessage(response: Response): Promise<string> {
-  try {
-    const body: unknown = await response.json();
-    if (typeof body === "object" && body !== null && "detail" in body && typeof body.detail === "string") {
-      return body.detail;
-    }
-  } catch {}
-  return "The score could not be processed. Please try again.";
-}
 
 export function PieceUploadForm() {
   const router = useRouter();
@@ -31,12 +19,8 @@ export function PieceUploadForm() {
       setState("error"); setError("Choose a MusicXML file before uploading."); return;
     }
     setState("uploading"); setError(null);
-    const data = new FormData(); data.append("file", file);
     try {
-      const response = await fetch(`${apiUrl}/scores/metadata`, { method: "POST", body: data });
-      if (!response.ok) throw new Error(await errorMessage(response));
-      const metadata = (await response.json()) as ScoreMetadataResponse;
-      const piece = createTemporaryPiece(metadata, file.name, await file.text());
+      const piece = await createPiece(file);
       setActivePiece(piece);
       router.push(`/pieces/${piece.id}`);
     } catch (uploadError) {
