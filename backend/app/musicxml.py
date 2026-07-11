@@ -1,12 +1,16 @@
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
+from pathlib import PurePosixPath
 from xml.etree.ElementTree import Element
+from zipfile import BadZipFile, ZipFile
 
 from defusedxml import ElementTree
 from defusedxml.common import DefusedXmlException
 
-SUPPORTED_EXTENSIONS = {".musicxml", ".xml"}
+SUPPORTED_EXTENSIONS = {".musicxml", ".xml", ".mxl"}
+MAX_MUSICXML_BYTES = 5 * 1024 * 1024
+MAX_CONTAINER_BYTES = 1024 * 1024
 
 
 class MusicXMLValidationError(ValueError):
@@ -26,8 +30,57 @@ class ScoreMetadata:
 def validate_filename(filename: str | None) -> None:
     if not filename or Path(filename).suffix.lower() not in SUPPORTED_EXTENSIONS:
         raise MusicXMLValidationError(
-            "Choose a MusicXML file with a .musicxml or .xml extension."
+            "Choose a MusicXML file with a .musicxml, .xml, or .mxl extension."
         )
+
+
+def musicxml_document(filename: str, content: bytes) -> bytes:
+    """Return plain MusicXML bytes from a supported plain or compressed file."""
+    if Path(filename).suffix.lower() != ".mxl":
+        return content
+
+    try:
+        with ZipFile(BytesIO(content)) as archive:
+            container_info = archive.getinfo("META-INF/container.xml")
+            if container_info.file_size > MAX_CONTAINER_BYTES:
+                raise MusicXMLValidationError("The MXL container metadata is too large.")
+            container = archive.read(container_info)
+            root_path = _mxl_root_path(container)
+            root_info = archive.getinfo(root_path)
+            if root_info.file_size > MAX_MUSICXML_BYTES:
+                raise MusicXMLValidationError("The MusicXML document inside the MXL file is too large.")
+            with archive.open(root_info) as root_file:
+                extracted = root_file.read(MAX_MUSICXML_BYTES + 1)
+            if len(extracted) > MAX_MUSICXML_BYTES:
+                raise MusicXMLValidationError("The MusicXML document inside the MXL file is too large.")
+            return extracted
+    except MusicXMLValidationError:
+        raise
+    except (BadZipFile, KeyError, RuntimeError, OSError) as error:
+        raise MusicXMLValidationError("The uploaded MXL file is invalid or incomplete.") from error
+
+
+def musicxml_text(content: bytes) -> str:
+    try:
+        return content.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise MusicXMLValidationError("The MusicXML document must use UTF-8 text encoding.") from error
+
+
+def _mxl_root_path(container: bytes) -> str:
+    try:
+        root = ElementTree.parse(BytesIO(container)).getroot()
+    except (ElementTree.ParseError, DefusedXmlException) as error:
+        raise MusicXMLValidationError("The MXL container metadata is not valid XML.") from error
+    for item in root.iter():
+        if _local_name(item.tag) != "rootfile":
+            continue
+        path = item.attrib.get("full-path", "")
+        normalized = PurePosixPath(path.replace("\\", "/"))
+        if not path or normalized.is_absolute() or ".." in normalized.parts:
+            raise MusicXMLValidationError("The MXL container has an unsafe root document path.")
+        return normalized.as_posix()
+    raise MusicXMLValidationError("The MXL container does not identify a root MusicXML document.")
 
 
 def parse_musicxml(content: bytes) -> ScoreMetadata:

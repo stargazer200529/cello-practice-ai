@@ -65,6 +65,10 @@ in-browser microphone recording and replay. It does not implement manual audio
 upload, backend recording storage, persistence, highlighting, analysis, scoring,
 authentication, a database, or deployment.
 
+MusicXML upload accepts plain `.musicxml` and `.xml` files plus compressed `.mxl`
+containers. MXL container metadata selects the root score document before the
+existing parser validates and reads it.
+
 The frontend is organized around one temporary in-memory Piece workspace:
 
 - `/` introduces the current workflow.

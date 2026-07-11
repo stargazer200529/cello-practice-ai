@@ -28,6 +28,7 @@ export interface ScoreMetadataResponse {
   measure_count: number;
   time_signatures: string[];
   key_signatures: string[];
+  musicxml: string;
 }
 
 export function createTemporaryPiece(

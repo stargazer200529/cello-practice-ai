@@ -5,11 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.musicxml import (
     MusicXMLValidationError,
+    MAX_MUSICXML_BYTES,
+    musicxml_document,
+    musicxml_text,
     parse_musicxml,
     validate_filename,
 )
 
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+MAX_UPLOAD_BYTES = MAX_MUSICXML_BYTES
 
 app = FastAPI(title="Cello Practice AI API", version="0.1.0")
 
@@ -38,7 +41,8 @@ async def score_metadata(file: UploadFile = File(...)) -> dict[str, object]:
             raise MusicXMLValidationError("The MusicXML file must be 5 MB or smaller.")
         if not content:
             raise MusicXMLValidationError("The uploaded MusicXML file is empty.")
-        return asdict(parse_musicxml(content))
+        document = musicxml_document(file.filename or "", content)
+        return {**asdict(parse_musicxml(document)), "musicxml": musicxml_text(document)}
     except MusicXMLValidationError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,

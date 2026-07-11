@@ -1,4 +1,5 @@
 from io import BytesIO
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from fastapi.testclient import TestClient
 
@@ -37,11 +38,26 @@ def upload(content: bytes, filename: str = "study.musicxml"):
     )
 
 
+def mxl(score: bytes = VALID_SCORE, container: bytes | None = None, root_name: str = "scores/main.musicxml") -> bytes:
+    output = BytesIO()
+    container = container or f"""<?xml version="1.0"?>
+    <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+      <rootfiles><rootfile full-path="{root_name}" media-type="application/vnd.recordare.musicxml+xml"/></rootfiles>
+    </container>""".encode()
+    with ZipFile(output, "w", ZIP_DEFLATED) as archive:
+        archive.writestr("META-INF/container.xml", container)
+        if root_name and ".." not in root_name:
+            archive.writestr(root_name, score)
+    return output.getvalue()
+
+
 def test_upload_returns_real_score_metadata() -> None:
     response = upload(VALID_SCORE)
 
     assert response.status_code == 200
-    assert response.json() == {
+    body = response.json()
+    assert body.pop("musicxml") == VALID_SCORE.decode()
+    assert body == {
         "title": "Cello Study",
         "composer": "Ada Example",
         "part_names": ["Violoncello", "Piano"],
@@ -49,6 +65,59 @@ def test_upload_returns_real_score_metadata() -> None:
         "time_signatures": ["4/4", "3/4"],
         "key_signatures": ["-2 fifths, minor"],
     }
+
+
+def test_upload_accepts_valid_compressed_mxl() -> None:
+    response = upload(mxl(), "study.mxl")
+    assert response.status_code == 200
+    assert response.json()["title"] == "Cello Study"
+    assert response.json()["musicxml"] == VALID_SCORE.decode()
+
+
+def test_upload_rejects_non_zip_mxl() -> None:
+    response = upload(b"not a zip", "study.mxl")
+    assert response.status_code == 422
+    assert response.json() == {"detail": "The uploaded MXL file is invalid or incomplete."}
+
+
+def test_upload_rejects_mxl_without_container() -> None:
+    output = BytesIO()
+    with ZipFile(output, "w") as archive:
+        archive.writestr("score.musicxml", VALID_SCORE)
+    response = upload(output.getvalue(), "study.mxl")
+    assert response.status_code == 422
+
+
+def test_upload_rejects_malformed_mxl_container() -> None:
+    response = upload(mxl(container=b"<container>"), "study.mxl")
+    assert response.status_code == 422
+    assert response.json() == {"detail": "The MXL container metadata is not valid XML."}
+
+
+def test_upload_rejects_mxl_without_rootfile_declaration() -> None:
+    response = upload(mxl(container=b"<container><rootfiles/></container>"), "study.mxl")
+    assert response.status_code == 422
+    assert response.json() == {"detail": "The MXL container does not identify a root MusicXML document."}
+
+
+def test_upload_rejects_mxl_with_missing_root_document() -> None:
+    output = BytesIO()
+    with ZipFile(output, "w") as archive:
+        archive.writestr("META-INF/container.xml", "<container><rootfiles><rootfile full-path='missing.musicxml'/></rootfiles></container>")
+    response = upload(output.getvalue(), "study.mxl")
+    assert response.status_code == 422
+
+
+def test_upload_rejects_mxl_with_unsafe_root_path() -> None:
+    response = upload(mxl(root_name="../score.musicxml"), "study.mxl")
+    assert response.status_code == 422
+    assert response.json() == {"detail": "The MXL container has an unsafe root document path."}
+
+
+def test_upload_reuses_parser_validation_for_mxl_root() -> None:
+    response = upload(mxl(score=b"<catalog/>") , "study.mxl")
+    assert response.status_code == 422
+    assert response.json() == {"detail": "The uploaded XML is not a supported MusicXML score."}
 
 
 def test_upload_preserves_absent_optional_metadata() -> None:
@@ -102,7 +171,7 @@ def test_upload_rejects_unsupported_extension() -> None:
 
     assert response.status_code == 422
     assert response.json() == {
-        "detail": "Choose a MusicXML file with a .musicxml or .xml extension."
+        "detail": "Choose a MusicXML file with a .musicxml, .xml, or .mxl extension."
     }
 
 
