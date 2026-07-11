@@ -1,9 +1,8 @@
-
 # Product Vision
 
 ## Working Name
 
-Practice with Purpose *(working title)*
+**Practice with Purpose** *(working title)*
 
 > **Practice with Purpose**
 
@@ -11,7 +10,9 @@ Practice with Purpose *(working title)*
 
 # Vision Statement
 
-Practice with Purpose is an intelligent practice companion that helps musicians transform practice time into measurable progress through objective feedback, long-term learning insights, and focused practice guidance.
+Practice with Purpose is an intelligent practice companion that helps musicians turn every practice session into purposeful, measurable progress.
+
+Through objective feedback, long-term learning insights, and personalized practice guidance, the application helps musicians spend less time deciding what to practice and more time becoming better musicians.
 
 The application is designed to complement—not replace—a teacher.
 
@@ -34,7 +35,7 @@ During individual practice, musicians constantly ask themselves questions such a
 - Is this becoming a habit?
 - Am I ready to perform this piece?
 
-Traditional tools answer only isolated questions.
+Traditional practice tools answer only isolated questions.
 
 Tuners measure pitch.
 
@@ -50,7 +51,11 @@ None of these tools combine objective analysis, long-term progress tracking, and
 
 # Our Solution
 
-Rather than evaluating performances, Practice with Purpose evaluates learning.
+Practice with Purpose organizes the entire practice experience.
+
+Rather than simply evaluating performances, it helps musicians plan, execute, reflect on, and improve every practice session.
+
+Each session begins with intention, continues with focused practice, and ends with meaningful feedback and recommendations.
 
 The application builds an understanding of:
 
@@ -61,8 +66,6 @@ The application builds an understanding of:
 - areas requiring additional attention
 
 Instead of reporting only mistakes, the application helps musicians decide what to practice next.
-
-Example:
 
 Instead of:
 
@@ -84,13 +87,51 @@ The objective is deliberate practice.
 
 ---
 
+# Practice Begins With Intention
+
+Every practice session begins with one simple question:
+
+> **What do you want to accomplish today?**
+
+The musician defines:
+
+- Practice Intent
+- Practice Scope
+- Practice Goals
+
+The application adapts its guidance and analysis to support those objectives rather than assuming every practice session has the same purpose.
+
+Whether preparing for a performance, working on intonation, reinforcing a teacher assignment, maintaining repertoire, or simply exploring new music, the application supports the musician's chosen objective.
+
+---
+
+# The Musician Remains in Control
+
+The application recommends.
+
+Teachers assign.
+
+The musician decides.
+
+Practice with Purpose never dictates how musicians should practice.
+
+Recommendations are always optional.
+
+Teacher assignments are always respected.
+
+Personal practice choices are always supported.
+
+The application exists to support deliberate practice—not replace musical judgment.
+
+---
+
 # Who This Is For
 
-The application is designed for musicians of all ages and experience levels.
+Practice with Purpose is designed for musicians of all ages and experience levels.
 
-Version 1.0 will focus on solo cello because it provides the best opportunity to validate the analysis algorithms with real-world experience.
+Version 1.0 will focus on solo cello because it provides the best opportunity to develop and validate the analysis algorithms using real-world experience.
 
-The overall architecture should remain flexible enough to support additional instruments in the future.
+The overall architecture will remain flexible enough to support additional instruments in future versions.
 
 ---
 
@@ -106,7 +147,9 @@ Practice with Purpose is not:
 
 It is a practice companion.
 
-Its purpose is to help musicians make better practice decisions through objective feedback and meaningful progress tracking.
+Its purpose is to help musicians make better practice decisions through objective feedback, meaningful progress tracking, and intelligent guidance.
+
+Rather than measuring a single performance, it supports the lifelong process of becoming a better musician.
 
 ---
 
@@ -114,36 +157,58 @@ Its purpose is to help musicians make better practice decisions through objectiv
 
 Teachers remain the primary source of musical instruction.
 
-The application supports teachers by helping students:
+Practice with Purpose supports teachers by helping students:
 
 - reinforce lesson assignments
-- practice more efficiently between lessons
+- practice more effectively between lessons
 - identify recurring technical problems
 - organize recordings and practice history
-- demonstrate progress over time
+- demonstrate measurable progress over time
 
-Teachers decide what to learn.
+Teachers determine what to learn.
 
-The application helps students practice it effectively.
+The application helps students practice it more effectively.
+
+---
+
+# Practice Sessions
+
+Every interaction with the application revolves around a practice session.
+
+A practice session represents focused work toward a specific objective.
+
+Each session allows the musician to define:
+
+- Practice Intent
+- Practice Scope
+- Practice Goals
+
+These remain visible and editable throughout the session.
+
+The application adapts as the musician's priorities change without interrupting the natural flow of practice.
+
+Every practice session is independent.
+
+Previous sessions inform future recommendations, but each new session begins with a fresh objective and a fresh opportunity to improve.
 
 ---
 
 # Success
 
-Success is not perfection.
+Success is not measured by a single performance.
 
-Success is measurable improvement.
+Success is measured by sustained growth over time.
 
-Examples include:
+The application celebrates:
 
-- improved intonation consistency
-- stronger rhythmic accuracy
+- consistent practice
+- improved technique
+- increased musical confidence
+- passage mastery
 - healthier practice habits
-- increased confidence
-- successful mastery of difficult passages
-- better long-term retention
+- long-term musical development
 
-The application celebrates progress rather than perfection.
+Progress is more important than perfection.
 
 ---
 
@@ -157,7 +222,7 @@ Every feature should help the musician:
 
 - practice with intention
 - understand what happened
-- know why it happened
+- understand why it happened
 - know what to do next
 
 When the musician closes the application, they should feel confident that today's practice moved them closer to mastering their instrument.
@@ -166,20 +231,21 @@ When the musician closes the application, they should feel confident that today'
 
 # Long-Term Vision
 
-Practice with Purpose should become the central hub for individual practice.
+Practice with Purpose should become the operating system for individual musical practice.
 
 It should organize:
 
 - music
 - practice sessions
 - recordings
-- assignments
+- teacher assignments
 - analysis
 - progress
+- mastery
 - recommendations
 
-The application should become a trusted practice companion that grows alongside the musician throughout years of study.
+The application should become a trusted companion that grows alongside the musician throughout years of study.
 
 Every feature should reinforce one belief:
 
-> Great musicians are built through deliberate practice, not mindless repetition.
+> **Great musicians are built through deliberate practice, not mindless repetition.**
