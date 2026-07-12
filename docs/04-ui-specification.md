@@ -142,7 +142,8 @@ Provide a complete overview of one musical work.
 
 - Piece title
 - Composer
-- Estimated mastery
+- Overall practice status
+- Practice map
 - Practice heat map
 - Recent practice sessions
 - Teacher assignments
