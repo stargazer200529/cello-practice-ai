@@ -1,209 +1,180 @@
-# Experience Mockups
-
-## Purpose
-
-This document defines the conceptual layout of every major screen within Practice with Purpose.
-
-These are not visual designs.
-
-They are functional wireframes intended to communicate:
-
-- information hierarchy
-- user flow
-- primary actions
-- interaction priorities
-
-Every screen should answer one primary question.
-
-If a screen attempts to answer multiple questions, it should be simplified.
-
+Experience Mockups
+Purpose
+This document defines the conceptual layout of every major screen within
+Practice with Purpose.
+These mockups communicate:
+information hierarchy
+primary actions
+interaction priorities
+the intended musician experience
+They are not visual designs or pixel-perfect wireframes.
+The application should feel like a trusted companion beside the music
+stand.
 ---
-
-# Home
-
-Question:
-
+Home
+Question
 > What should I practice today?
+``` text
++------------------------------------------------------+
 
-```
-+--------------------------------------------------------+
+Good Evening, Kara
 
 Practice with Purpose
 
-----------------------------------------------------------
+--------------------------------------------------------
 
 Resume Your Progress
 
 Bach Suite No. 1
 
-Last practiced yesterday
-
-Suggested focus:
-Measures 23–25
-
-[ Start Practice ]
-
-----------------------------------------------------------
-
-Teacher Assignments
-
-Popper No. 6
-
-Due Thursday
-
-----------------------------------------------------------
-
-Recent Pieces
-
-Bach Suite No. 1
-
-Haydn Concerto
-
-Cello Scales
-
-+ Add Piece
-
-----------------------------------------------------------
-
-Navigation
-
-Home | My Music | Progress | Teacher | Settings
-
-+--------------------------------------------------------+
-```
-
-Primary action:
-
-Start Practice
-
----
-
-# My Music
-
-Question:
-
-> What music do I have?
-
-```
-+--------------------------------------------------------+
-
-My Music
-
-Search ___________________
-
-----------------------------------------------------------
-
-Bach Suite No. 1
-
-Last practiced yesterday
-
-----------------------------------------------------------
-
-Haydn Concerto
-
-----------------------------------------------------------
-
-Popper No. 6
-
-----------------------------------------------------------
-
-Cello Scales
-
-----------------------------------------------------------
-
-+ Add Piece
-
-+--------------------------------------------------------+
-```
-
-Selecting a piece opens Piece Home.
-
----
-
-# Piece Home
-
-Question:
-
-> Where am I with this piece?
-
-```
-+--------------------------------------------------------+
-
-Bach Suite No. 1
-
-----------------------------------------------------------
-
 Suggested Focus
-
 Measures 23–25
 
 Estimated Practice
-
 10 minutes
 
 [ Start Practice ]
 
-----------------------------------------------------------
+--------------------------------------------------------
 
-Practice Heat Map
+Teacher Assignments
 
-🟩 🟩 🟨 🟥 🟩 🟩
+Popper No. 6
+Due Thursday
 
-----------------------------------------------------------
+--------------------------------------------------------
 
-Recent Practice
+Recent Pieces
 
-Yesterday
+• Bach Suite No. 1
+• Haydn Concerto
+• Cello Scales
 
-Monday
+[ My Music ]     [ Add Piece ]
 
-Last Thursday
+--------------------------------------------------------
 
-----------------------------------------------------------
+Home | My Music | Progress | Teacher | Settings
 
-Teacher Assignment
-
-Continue string crossings
-
-----------------------------------------------------------
-
-Progress
-
-Intonation
-
-↑ Improving
-
-Rhythm
-
-→ Stable
-
-+--------------------------------------------------------+
++------------------------------------------------------+
 ```
-
-Primary action:
-
-Start Practice
-
 ---
+My Music
+Question
+> What music do I have?
+``` text
++------------------------------------------------------+
 
-# Practice Workspace
+My Music
 
-Question:
+Search _______________________
 
-> What should I focus on right now?
-
-```
-+------------------------------------------------------------------+
+--------------------------------------------------------
 
 Bach Suite No. 1
 
+Last practiced yesterday
+
+--------------------------------------------------------
+
+Haydn Concerto
+
+--------------------------------------------------------
+
+Popper No. 6
+
+--------------------------------------------------------
+
+Cello Scales
+
+--------------------------------------------------------
+
++ Add Piece
+
++------------------------------------------------------+
+```
+Selecting a piece opens that piece's home.
+---
+Piece Home
+Question
+> Where am I with this piece?
+``` text
++------------------------------------------------------+
+
+Bach Suite No. 1
+J. S. Bach
+
+--------------------------------------------------------
+
+Today's Recommendation
+
 Measures 23–25
 
-Session Time
+Focus
+Intonation
 
+Estimated Practice
+10 minutes
+
+[ Start Practice ]
+
+--------------------------------------------------------
+
+Practice Map
+
+🟩 🟩 🟨 🟥 🟩 🟩
+
+Green  = Comfortable
+
+Yellow = Needs reinforcement
+
+Red    = Recommended focus
+
+--------------------------------------------------------
+
+Recent Practice
+
+Yesterday — 22 minutes
+
+Monday — 18 minutes
+
+Last Thursday — 27 minutes
+
+--------------------------------------------------------
+
+Teacher Assignment
+
+Continue string crossings in Measures 20–28
+
+--------------------------------------------------------
+
+Current Progress
+
+Rhythm became more consistent this month.
+
+The shift into Measure 24 still needs reinforcement.
+
++------------------------------------------------------+
+```
+---
+Practice Workspace
+Question
+> What should I focus on right now?
+``` text
++----------------------------------------------------------------+
+
+Bach Suite No. 1
+
+Session Time
 18:42
 
--------------------------------------------------------------
+------------------------------------------------------------------
+
+Current Passage
+
+Measures 23–25                                [ Change ]
+
+------------------------------------------------------------------
 
 Today's Focus
 
@@ -215,7 +186,9 @@ Today's Focus
 
 ☐ Technique
 
--------------------------------------------------------------
+[ Edit Focus ]
+
+------------------------------------------------------------------
 
 Recording
 
@@ -223,111 +196,128 @@ Recording
 
 Latest Recording
 
+Recording 3
+
 18 seconds
 
-Replay
+Measures 23–25
 
--------------------------------------------------------------
+[ Replay ]
+
+------------------------------------------------------------------
 
 Practice Tool
 
-(Live tuner shown because Intonation is selected)
+Live Tuner
 
--------------------------------------------------------------
+Note: F#
+
+Pitch Center: 14 cents flat
+
+Pitch Stability: Moderate
+
+------------------------------------------------------------------
 
 Practice Goals
 
-☑ 20 minute session
+☑ Practice for 20 minutes
 
-☑ 3 successful repetitions
+☑ Complete 3 successful repetitions
 
--------------------------------------------------------------
+[ Edit Goals ]
 
-Reference Score
-
-(optional)
-
--------------------------------------------------------------
+------------------------------------------------------------------
 
 Practice Notes
 
--------------------------------------------------------------
+• Relax left thumb
 
-End Practice
+• Keep bow parallel to bridge
 
-+------------------------------------------------------------------+
+[ Add Note ]
+
+------------------------------------------------------------------
+
+Reference Score
+
+[ Open Score ]
+
+Optional reference only.
+
+------------------------------------------------------------------
+
+Recordings Today
+
+Recording 1 — Measures 23–25 — 21 sec
+
+Recording 2 — Measures 23–25 — 19 sec
+
+Recording 3 — Measures 23–25 — 18 sec
+
+[ View All ]
+
+------------------------------------------------------------------
+
+[ End Practice ]
+
++----------------------------------------------------------------+
 ```
-
-Design Principles
-
+Workspace Rules
 Everything remains editable.
-
-Nothing interrupts practice.
-
-The score is a reference.
-
-Printed music remains the primary source during performance.
-
+Changing passage, focus, or goals never restarts the session.
+The application assumes printed music is the primary performance
+score.
+The digital score is an optional reference.
+During active recording the interface remains quiet.
+Practice map colors update only after analysis is complete.
 ---
-
-# Recording History
-
-Question:
-
+Recording History
+Question
 > What happened during today's practice?
-
-```
-+--------------------------------------------------------+
+``` text
++------------------------------------------------------+
 
 Today's Practice
 
 Recording 1
 
+Measures 23–25
+
 18 seconds
 
-Replay
+[ Replay ]                              [ More ]
 
-----------------------------------------------------------
+--------------------------------------------------------
 
 Recording 2
 
+Measures 40–42
+
 22 seconds
 
-Replay
+[ Replay ]                              [ More ]
 
-----------------------------------------------------------
+--------------------------------------------------------
 
 Recording 3
 
+Measures 23–25
+
 19 seconds
 
-Replay
+[ Replay ]                              [ More ]
 
-----------------------------------------------------------
-
-Recording 4
-
-21 seconds
-
-Replay
-
-+--------------------------------------------------------+
++------------------------------------------------------+
 ```
-
-Recordings document learning.
-
-Not perfection.
-
+The More menu may contain:
+Remove Recording
+Removal should be reserved for accidental or invalid recordings.
 ---
-
-# Practice Summary
-
-Question:
-
+Practice Summary
+Question
 > What did I accomplish today?
-
-```
-+--------------------------------------------------------+
+``` text
++------------------------------------------------------+
 
 Practice Complete
 
@@ -335,115 +325,120 @@ Practice Complete
 
 6 recordings
 
-Measures 23–25
+Measures 23–25 and 40–42
 
-----------------------------------------------------------
+--------------------------------------------------------
 
 What Improved
 
-✓ Rhythm became more consistent.
+✓ Rhythm became more consistent in Measures 23–25.
 
-✓ Intonation improved.
+✓ The F# in Measure 24 moved closer to pitch center.
 
-✓ Tempo remained stable.
+✓ Tempo remained stable across the final three recordings.
 
-----------------------------------------------------------
+--------------------------------------------------------
 
-Continue Next Time
+Still Needs Attention
 
-Measure 24
+The shift into Measure 24 averaged slightly flat.
 
-Shift remains slightly flat.
+The same tendency appeared in three recordings.
 
-Estimated practice:
+--------------------------------------------------------
+
+Looking Ahead
+
+Begin with Measures 23–25.
+
+Suggested approach
+
+• Practice the shift separately
+
+• Remove vibrato
+
+• Slower tempo
+
+• Record three repetitions
+
+Estimated focus time
 
 8–10 minutes
 
-----------------------------------------------------------
+--------------------------------------------------------
 
-See you tomorrow.
+Teacher Reminder
 
-+--------------------------------------------------------+
+Keep the left thumb relaxed during the shift.
+
+--------------------------------------------------------
+
+[ Done ]
+
++------------------------------------------------------+
 ```
-
-The summary should always leave the musician encouraged.
-
+Every summary should leave the musician motivated to practice again.
 ---
-
-# Progress
-
-Question:
-
+Progress
+Question
 > How am I growing?
-
-```
-+--------------------------------------------------------+
+``` text
++------------------------------------------------------+
 
 Progress
 
-----------------------------------------------------------
+--------------------------------------------------------
 
-Practice Frequency
+This Month
 
-███████
+14 practice sessions
 
-----------------------------------------------------------
+4 hours 32 minutes practiced
 
-Heat Map Evolution
+--------------------------------------------------------
 
-January
+Most Improved
 
-February
+Measures 23–25
 
-March
+Rhythm became more consistent across five sessions.
 
-----------------------------------------------------------
+--------------------------------------------------------
 
-Technique Trends
+Current Focus
 
-Intonation
+Fourth-finger intonation
 
-↑
+--------------------------------------------------------
 
-Rhythm
+Practice Pattern
 
-→
+You have practiced Bach Suite No. 1 consistently for
+three weeks.
 
-Dynamics
-
-↑
-
-----------------------------------------------------------
+--------------------------------------------------------
 
 Pieces
 
-Bach
+Bach Suite No. 1
 
-Popper
+Popper No. 6
 
-Haydn
+Haydn Concerto
 
-+--------------------------------------------------------+
++------------------------------------------------------+
 ```
-
-Progress focuses on long-term growth.
-
-Not individual scores.
-
+Progress emphasizes long-term learning rather than numerical scores.
 ---
-
-# Teacher
-
-Question:
-
-> What has my teacher asked me to work on?
-
-```
-+--------------------------------------------------------+
+Teacher
+Question
+> What has my teacher assigned?
+``` text
++------------------------------------------------------+
 
 Teacher Assignments
 
-----------------------------------------------------------
+--------------------------------------------------------
 
 Bach Suite No. 1
 
@@ -451,15 +446,15 @@ Measures 23–25
 
 Due Thursday
 
-----------------------------------------------------------
+--------------------------------------------------------
 
-Haydn
+Haydn Concerto
 
 Movement II
 
 Bow distribution
 
-----------------------------------------------------------
+--------------------------------------------------------
 
 Completed
 
@@ -467,25 +462,21 @@ Popper No. 6
 
 ✓
 
-+--------------------------------------------------------+
++------------------------------------------------------+
 ```
-
-Assignments never prevent personal practice.
-
+Assignments guide practice but never prevent independent practice.
 ---
-
-# Add Piece
-
-Question:
-
+Add Piece
+Question
 > What would you like to learn?
-
-```
-+--------------------------------------------------------+
+``` text
++------------------------------------------------------+
 
 Import Music
 
-----------------------------------------------------------
+--------------------------------------------------------
+
+Supported Formats
 
 MusicXML
 
@@ -493,7 +484,13 @@ MXL
 
 PDF (Future)
 
-----------------------------------------------------------
+--------------------------------------------------------
+
+Select File
+
+[ Choose File ]
+
+--------------------------------------------------------
 
 Piece Information
 
@@ -503,75 +500,55 @@ Composer
 
 Instrument
 
-----------------------------------------------------------
+--------------------------------------------------------
+
+Copyright Confirmation
+
+☐ I confirm that I own this score or have permission
+to upload and use it for personal practice.
+
+Copyright remains with the original rights holder.
+
+[ View Copyright Policy ]
+
+--------------------------------------------------------
 
 [ Import ]
 
-+--------------------------------------------------------+
++------------------------------------------------------+
 ```
-
 ---
-
-# Mobile Layout
-
-The mobile application is intended to sit beside the music stand.
-
-The interface should emphasize:
-
-- recording
-- practice guidance
-- tuner
-- recommendations
-
-The musician is expected to perform primarily from printed music.
-
+Responsive Philosophy
+Desktop
+Best for reviewing progress, teacher assignments, and extended practice.
+Tablet
+Primary practice platform.
+Designed to sit beside printed music on a music stand.
+Phone
+Companion experience.
+Ideal for:
+recording
+tuner
+teacher assignments
+practice guidance
+reviewing progress
+The phone is not intended to replace printed music.
 ---
-
-# Tablet Layout
-
-Tablet provides the optimal practice experience.
-
-Large controls.
-
-Minimal navigation.
-
-Reference score available when desired.
-
-Designed to remain readable from a music stand.
-
+Screen Responsibilities
+Screen               Primary Question
 ---
-
-# Desktop Layout
-
-Desktop provides the richest experience.
-
-Multiple information panels may remain visible simultaneously.
-
-Ideal for reviewing progress, teacher assignments, and longer practice sessions.
-
+Home                 What should I practice today?
+My Music             What music do I have?
+Piece Home           Where am I with this piece?
+Practice Workspace   What should I focus on right now?
+Recording History    What happened during today's practice?
+Practice Summary     What did I accomplish today?
+Progress             How am I improving?
+Teacher              What has my teacher assigned?
+Each screen should answer one primary question.
 ---
-
-# Screen Responsibilities
-
-| Screen | Purpose |
-|---------|---------|
-| Home | Decide what to practice |
-| My Music | Browse library |
-| Piece Home | Understand one musical work |
-| Practice Workspace | Practice |
-| Recording History | Review today's recordings |
-| Practice Summary | Reflect |
-| Progress | View long-term growth |
-| Teacher | Review assignments |
-
-Every screen should answer one question.
-
-No screen should attempt to answer all questions.
-
----
-
-# Success
-
-The interface succeeds when the musician spends more time making music than interacting with software.
-
-The application should feel like a trusted companion sitting beside the music stand rather than the center of the practice experience.
+Success
+The interface succeeds when the musician spends more time making music
+than interacting with software.
+The application should feel like a trusted companion beside the music
+stand rather than the center of the practice experience.
