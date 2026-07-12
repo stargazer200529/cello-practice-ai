@@ -323,6 +323,21 @@ Each recording displays:
 Recordings document learning.
 
 They should not encourage repeated deletion in pursuit of perfection.
+Removing a recording should be a secondary action labeled:
+
+Remove Recording
+
+The application may ask the musician to identify why the recording is being
+removed:
+
+- Accidental recording
+- Wrong piece or passage
+- No usable audio
+- Other
+
+Removal should not appear as a prominent action in the normal recording
+workflow. Recordings are intended to preserve the learning process rather than
+only polished attempts.
 
 ---
 
