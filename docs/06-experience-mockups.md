@@ -1,19 +1,30 @@
-Experience Mockups
-Purpose
+# Experience Mockups
+
+## Purpose
+
 This document defines the conceptual layout of every major screen within
-Practice with Purpose.
+**Practice with Purpose**.
+
 These mockups communicate:
-information hierarchy
-primary actions
-interaction priorities
-the intended musician experience
-They are not visual designs or pixel-perfect wireframes.
+
+-   information hierarchy
+-   primary actions
+-   interaction priorities
+-   the intended musician experience
+
+They are **not** visual designs or pixel-perfect wireframes.
+
 The application should feel like a trusted companion beside the music
 stand.
----
-Home
-Question
+
+------------------------------------------------------------------------
+
+# Home
+
+**Question**
+
 > What should I practice today?
+
 ``` text
 +------------------------------------------------------+
 
@@ -58,10 +69,15 @@ Home | My Music | Progress | Teacher | Settings
 
 +------------------------------------------------------+
 ```
----
-My Music
-Question
+
+------------------------------------------------------------------------
+
+# My Music
+
+**Question**
+
 > What music do I have?
+
 ``` text
 +------------------------------------------------------+
 
@@ -93,11 +109,17 @@ Cello Scales
 
 +------------------------------------------------------+
 ```
+
 Selecting a piece opens that piece's home.
----
-Piece Home
-Question
+
+------------------------------------------------------------------------
+
+# Piece Home
+
+**Question**
+
 > Where am I with this piece?
+
 ``` text
 +------------------------------------------------------+
 
@@ -156,10 +178,15 @@ The shift into Measure 24 still needs reinforcement.
 
 +------------------------------------------------------+
 ```
----
-Practice Workspace
-Question
+
+------------------------------------------------------------------------
+
+# Practice Workspace
+
+**Question**
+
 > What should I focus on right now?
+
 ``` text
 +----------------------------------------------------------------+
 
@@ -262,18 +289,25 @@ Recording 3 — Measures 23–25 — 18 sec
 
 +----------------------------------------------------------------+
 ```
-Workspace Rules
-Everything remains editable.
-Changing passage, focus, or goals never restarts the session.
-The application assumes printed music is the primary performance
-score.
-The digital score is an optional reference.
-During active recording the interface remains quiet.
-Practice map colors update only after analysis is complete.
----
-Recording History
-Question
+
+### Workspace Rules
+
+-   Everything remains editable.
+-   Changing passage, focus, or goals never restarts the session.
+-   The application assumes printed music is the primary performance
+    score.
+-   The digital score is an optional reference.
+-   During active recording the interface remains quiet.
+-   Practice map colors update only after analysis is complete.
+
+------------------------------------------------------------------------
+
+# Recording History
+
+**Question**
+
 > What happened during today's practice?
+
 ``` text
 +------------------------------------------------------+
 
@@ -309,13 +343,21 @@ Measures 23–25
 
 +------------------------------------------------------+
 ```
-The More menu may contain:
-Remove Recording
+
+The **More** menu may contain:
+
+-   Remove Recording
+
 Removal should be reserved for accidental or invalid recordings.
----
-Practice Summary
-Question
+
+------------------------------------------------------------------------
+
+# Practice Summary
+
+**Question**
+
 > What did I accomplish today?
+
 ``` text
 +------------------------------------------------------+
 
@@ -377,11 +419,17 @@ Keep the left thumb relaxed during the shift.
 
 +------------------------------------------------------+
 ```
+
 Every summary should leave the musician motivated to practice again.
----
-Progress
-Question
+
+------------------------------------------------------------------------
+
+# Progress
+
+**Question**
+
 > How am I growing?
+
 ``` text
 +------------------------------------------------------+
 
@@ -428,11 +476,17 @@ Haydn Concerto
 
 +------------------------------------------------------+
 ```
+
 Progress emphasizes long-term learning rather than numerical scores.
----
-Teacher
-Question
+
+------------------------------------------------------------------------
+
+# Teacher
+
+**Question**
+
 > What has my teacher assigned?
+
 ``` text
 +------------------------------------------------------+
 
@@ -464,11 +518,17 @@ Popper No. 6
 
 +------------------------------------------------------+
 ```
+
 Assignments guide practice but never prevent independent practice.
----
-Add Piece
-Question
+
+------------------------------------------------------------------------
+
+# Add Piece
+
+**Question**
+
 > What would you like to learn?
+
 ``` text
 +------------------------------------------------------+
 
@@ -517,38 +577,58 @@ Copyright remains with the original rights holder.
 
 +------------------------------------------------------+
 ```
----
-Responsive Philosophy
-Desktop
+
+------------------------------------------------------------------------
+
+# Responsive Philosophy
+
+## Desktop
+
 Best for reviewing progress, teacher assignments, and extended practice.
-Tablet
+
+## Tablet
+
 Primary practice platform.
+
 Designed to sit beside printed music on a music stand.
-Phone
+
+## Phone
+
 Companion experience.
+
 Ideal for:
-recording
-tuner
-teacher assignments
-practice guidance
-reviewing progress
+
+-   recording
+-   tuner
+-   teacher assignments
+-   practice guidance
+-   reviewing progress
+
 The phone is not intended to replace printed music.
----
-Screen Responsibilities
-Screen               Primary Question
----
-Home                 What should I practice today?
-My Music             What music do I have?
-Piece Home           Where am I with this piece?
-Practice Workspace   What should I focus on right now?
-Recording History    What happened during today's practice?
-Practice Summary     What did I accomplish today?
-Progress             How am I improving?
-Teacher              What has my teacher assigned?
+
+------------------------------------------------------------------------
+
+# Screen Responsibilities
+
+  Screen               Primary Question
+  -------------------- ----------------------------------------
+  Home                 What should I practice today?
+  My Music             What music do I have?
+  Piece Home           Where am I with this piece?
+  Practice Workspace   What should I focus on right now?
+  Recording History    What happened during today's practice?
+  Practice Summary     What did I accomplish today?
+  Progress             How am I improving?
+  Teacher              What has my teacher assigned?
+
 Each screen should answer one primary question.
----
-Success
+
+------------------------------------------------------------------------
+
+# Success
+
 The interface succeeds when the musician spends more time making music
 than interacting with software.
+
 The application should feel like a trusted companion beside the music
 stand rather than the center of the practice experience.
