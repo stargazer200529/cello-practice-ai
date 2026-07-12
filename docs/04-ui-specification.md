@@ -151,6 +151,15 @@ Provide a complete overview of one musical work.
 - Progress trends
 - Reference score
 
+Practice status may use descriptive labels such as:
+
+- Comfortable
+- Needs reinforcement
+- Recommended focus
+- Insufficient data
+
+The interface should not display a numerical mastery percentage.
+
 ## Primary Action
 
 Start Practice
