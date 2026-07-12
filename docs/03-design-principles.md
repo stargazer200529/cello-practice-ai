@@ -294,6 +294,21 @@ Whenever possible:
 The software should make practice simpler—not more complicated.
 
 ---
+# The Application Lives Beside the Music Stand
+
+The application is a practice companion, not a replacement for printed music.
+
+Many musicians practice from paper music containing fingerings, bowings,
+teacher comments, and personal annotations. The application should complement
+that material rather than compete with it.
+
+During practice, the application should quietly provide recording, contextual
+tools, feedback, and guidance while the musician's attention remains on the
+instrument and printed music.
+
+The digital score may be used for reference, passage selection, and analysis
+visualization, but it should not dominate the practice experience.
+---
 
 # Our Standard
 
