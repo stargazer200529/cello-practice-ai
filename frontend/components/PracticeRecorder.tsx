@@ -2,41 +2,54 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { PracticeRecording } from "../models/piece";
+import {
+  createPracticeRecording,
+  removePracticeRecording,
+  uploadPracticeRecording,
+} from "../lib/practice";
+import type { PracticeRecording } from "../models/practice";
 
-type RecorderState = "idle" | "requesting" | "ready" | "recording" | "complete" | "denied" | "unavailable" | "error";
+type RecorderState =
+  | "idle" | "requesting" | "recording" | "stopping" | "saving"
+  | "upload_failed" | "denied" | "unavailable" | "error";
 
 const MIME_CANDIDATES = [
-  "audio/webm;codecs=opus",
-  "audio/webm",
-  "audio/mp4",
-  "audio/ogg;codecs=opus",
-  "audio/ogg",
+  "audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus", "audio/ogg",
 ];
 
-function formatDuration(milliseconds: number) {
-  const seconds = Math.floor(milliseconds / 1000);
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+export function selectSupportedMimeType(isSupported: (type: string) => boolean): string | undefined {
+  return MIME_CANDIDATES.find(isSupported);
 }
 
-function supportedMimeType() {
-  return MIME_CANDIDATES.find((type) => MediaRecorder.isTypeSupported(type));
-}
-
-type PracticeRecorderProps = {
-  pieceId: string;
-  recording: PracticeRecording | null;
-  onRecordingChange: (recording: PracticeRecording | null) => void;
+type PendingCapture = {
+  blob: Blob;
+  durationMs: number;
+  endedAt: string;
+  objectUrl: string;
+  recordingId?: string;
 };
 
-export function PracticeRecorder({ pieceId, recording, onRecordingChange }: PracticeRecorderProps) {
+type PracticeRecorderProps = {
+  sessionId: string;
+  segmentId: string;
+  disabled?: boolean;
+  onSaved: (recording: PracticeRecording) => void;
+  onBusyChange?: (busy: boolean) => void;
+};
+
+export function PracticeRecorder({
+  sessionId, segmentId, disabled = false, onSaved, onBusyChange,
+}: PracticeRecorderProps) {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAtRef = useRef(0);
+  const startedAtIsoRef = useRef("");
+  const pendingUrlRef = useRef<string | null>(null);
   const mountedRef = useRef(true);
-  const [state, setState] = useState<RecorderState>(recording ? "complete" : "idle");
+  const [state, setState] = useState<RecorderState>("idle");
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [pending, setPending] = useState<PendingCapture | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   function clearTimer() {
@@ -49,38 +62,61 @@ export function PracticeRecorder({ pieceId, recording, onRecordingChange }: Prac
     streamRef.current = null;
   }
 
+  function clearPending() {
+    if (pendingUrlRef.current) URL.revokeObjectURL(pendingUrlRef.current);
+    pendingUrlRef.current = null; setPending(null);
+  }
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
-      mountedRef.current = false;
-      clearTimer();
+      mountedRef.current = false; clearTimer();
       const recorder = recorderRef.current;
-      if (recorder && recorder.state !== "inactive") {
-        try { recorder.stop(); } catch {}
-      }
-      recorderRef.current = null;
-      releaseStream();
+      if (recorder && recorder.state !== "inactive") { try { recorder.stop(); } catch {} }
+      recorderRef.current = null; releaseStream();
+      if (pendingUrlRef.current) URL.revokeObjectURL(pendingUrlRef.current);
     };
   }, []);
 
+  useEffect(() => {
+    const busy = ["requesting", "recording", "stopping", "saving", "upload_failed"].includes(state);
+    onBusyChange?.(busy);
+    return () => onBusyChange?.(false);
+  }, [onBusyChange, state]);
+
+  async function persistCapture(capture: PendingCapture) {
+    setState("saving"); setMessage(null);
+    let current = capture;
+    try {
+      if (!current.recordingId) {
+        const created = await createPracticeRecording(sessionId, segmentId, startedAtIsoRef.current);
+        current = { ...current, recordingId: created.id };
+        if (mountedRef.current) setPending(current);
+      }
+      const recordingId = current.recordingId;
+      if (!recordingId) throw new Error("The recording could not be created.");
+      const saved = await uploadPracticeRecording(recordingId, current.blob, current.endedAt, current.durationMs);
+      if (!mountedRef.current) return;
+      clearPending(); setElapsedMs(0); setState("idle"); onSaved(saved);
+    } catch (error) {
+      if (!mountedRef.current) return;
+      setPending(current); setState("upload_failed");
+      setMessage(error instanceof Error ? error.message : "The recording could not be saved.");
+    }
+  }
+
   async function startRecording() {
-    if (state === "requesting" || state === "recording") return;
+    if (disabled || ["requesting", "recording", "stopping", "saving", "upload_failed"].includes(state)) return;
     setMessage(null);
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      setState("unavailable");
-      setMessage("This browser does not support direct microphone recording.");
-      return;
+      setState("unavailable"); setMessage("This browser does not support direct microphone recording."); return;
     }
-
-    onRecordingChange(null);
-    setElapsedMs(0);
     setState("requesting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: { ideal: 1 } } });
       if (!mountedRef.current) { stream.getTracks().forEach((track) => track.stop()); return; }
       streamRef.current = stream;
-      setState("ready");
-      const mimeType = supportedMimeType();
+      const mimeType = selectSupportedMimeType((type) => MediaRecorder.isTypeSupported(type));
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       const chunks: BlobPart[] = [];
       recorderRef.current = recorder;
@@ -93,71 +129,68 @@ export function PracticeRecorder({ pieceId, recording, onRecordingChange }: Prac
         clearTimer(); releaseStream(); recorderRef.current = null;
         if (!mountedRef.current) return;
         const durationMs = Date.now() - startedAtRef.current;
-        const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || "" });
+        const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || "audio/webm" });
         if (!blob.size) { setState("error"); setMessage("No audio was captured. Please try again."); return; }
-        const completed: PracticeRecording = {
-          id: crypto.randomUUID(), pieceId, createdAt: new Date().toISOString(), durationMs,
-          mimeType: blob.type, blob, objectUrl: URL.createObjectURL(blob),
-        };
-        onRecordingChange(completed); setElapsedMs(durationMs); setState("complete");
+        const objectUrl = URL.createObjectURL(blob);
+        pendingUrlRef.current = objectUrl;
+        const capture = { blob, durationMs, endedAt: new Date().toISOString(), objectUrl };
+        setPending(capture); void persistCapture(capture);
       });
-      startedAtRef.current = Date.now();
-      recorder.start(250);
-      setState("recording");
+      startedAtRef.current = Date.now(); startedAtIsoRef.current = new Date().toISOString();
+      recorder.start(250); setState("recording");
       timerRef.current = setInterval(() => setElapsedMs(Date.now() - startedAtRef.current), 250);
     } catch (error) {
       clearTimer(); releaseStream(); recorderRef.current = null;
       if (!mountedRef.current) return;
       if (error instanceof DOMException && error.name === "NotAllowedError") {
-        setState("denied"); setMessage("Microphone permission was denied. Allow access in your browser settings to record.");
+        setState("denied"); setMessage("Microphone permission was denied. Allow access in browser settings and try again.");
       } else if (error instanceof DOMException && error.name === "NotFoundError") {
         setState("unavailable"); setMessage("No microphone is available on this device.");
-      } else {
-        setState("error"); setMessage("The microphone could not start. Please try again.");
-      }
+      } else { setState("error"); setMessage("The microphone could not start. Please try again."); }
     }
   }
 
   function stopRecording() {
     const recorder = recorderRef.current;
     if (!recorder || recorder.state !== "recording") return;
+    setState("stopping");
     try { recorder.stop(); } catch {
       clearTimer(); releaseStream(); recorderRef.current = null;
       setState("error"); setMessage("The recording could not be stopped cleanly. Please try again.");
     }
   }
 
-  function discard() {
-    onRecordingChange(null); setElapsedMs(0); setMessage(null); setState("idle");
+  async function discardPending() {
+    if (pending?.recordingId) {
+      try { await removePracticeRecording(pending.recordingId); } catch {
+        setMessage("The unsaved recording could not be discarded. Try again."); return;
+      }
+    }
+    clearPending(); setState("idle"); setMessage(null); setElapsedMs(0);
   }
 
-  const currentRecording = recording && recording.pieceId === pieceId ? recording : null;
-  return (
-    <section className="practice-recorder" aria-labelledby="practice-title">
-      <h2 id="practice-title">Practice recording</h2>
-      <p className="field-help">Record directly from this device. This practice audio remains temporary and is not saved with the Piece.</p>
-      <div className="recorder-status" aria-live="polite">
-        {state === "requesting" && "Requesting microphone permission…"}
-        {state === "ready" && "Microphone ready."}
-        {state === "recording" && `Recording ${formatDuration(elapsedMs)}`}
-        {state === "complete" && "Recording complete."}
-        {state === "idle" && "Microphone not yet requested."}
-        {message}
-      </div>
-      <div className="recording-actions">
-        {(state === "idle" || state === "denied" || state === "unavailable" || state === "error") &&
-          <button type="button" onClick={() => void startRecording()}>Record</button>}
-        {state === "recording" && <button type="button" className="stop-button" onClick={stopRecording}>Stop</button>}
-      </div>
-      {currentRecording && state === "complete" && <div className="recording-complete">
-        <p><strong>Duration:</strong> {formatDuration(currentRecording.durationMs)}</p>
-        <audio controls src={currentRecording.objectUrl}>Your browser does not support audio playback.</audio>
-        <div className="recording-actions">
-          <button type="button" onClick={() => void startRecording()}>Record another attempt</button>
-          <button type="button" className="secondary-button" onClick={discard}>Discard recording</button>
-        </div>
-      </div>}
-      <p className="temporary-note">Permanent recording storage is not implemented. Refreshing or restarting clears this audio.</p>
-    </section>
-  );
+  const seconds = Math.floor(elapsedMs / 1000);
+  return <section className="practice-recorder" aria-labelledby="recording-title">
+    <h2 id="recording-title">Recording</h2>
+    <p className="field-help">Microphone access is requested only when you press Record. Saved audio remains private.</p>
+    <p className="recorder-status" aria-live="polite">
+      {state === "idle" && "Ready for your next attempt."}
+      {state === "requesting" && "Requesting microphone permission…"}
+      {state === "recording" && `Recording ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`}
+      {state === "stopping" && "Finishing recording…"}
+      {state === "saving" && "Saving recording…"}
+      {state === "upload_failed" && "Recording captured, but not yet saved."}
+      {message}
+    </p>
+    <div className="recording-actions">
+      {(state === "idle" || state === "denied" || state === "unavailable" || state === "error") &&
+        <button type="button" className="record-button" disabled={disabled} onClick={() => void startRecording()}>Record</button>}
+      {state === "recording" && <button type="button" className="stop-button" onClick={stopRecording}>Stop</button>}
+      {state === "upload_failed" && pending && <>
+        <button type="button" onClick={() => void persistCapture(pending)}>Retry save</button>
+        <button type="button" className="secondary-button" onClick={() => void discardPending()}>Discard local recording</button>
+      </>}
+    </div>
+    {state === "upload_failed" && pending && <audio controls src={pending.objectUrl}>Your browser does not support audio playback.</audio>}
+  </section>;
 }

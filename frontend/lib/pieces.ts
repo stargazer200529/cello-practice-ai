@@ -1,13 +1,5 @@
 import { Piece, PieceResponse, pieceFromResponse } from "../models/piece";
-
-export const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-async function checked(response: Response) {
-  if (response.ok) return response;
-  let message = "The request could not be completed.";
-  try { const body = await response.json(); if (typeof body.detail === "string") message = body.detail; } catch {}
-  throw new Error(message);
-}
+import { apiUrl, checked } from "./api";
 
 export async function listPieces(): Promise<Piece[]> {
   const response = await checked(await fetch(`${apiUrl}/pieces`, { cache: "no-store" }));
