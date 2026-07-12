@@ -19,3 +19,29 @@ class PracticeSessionCreate(BaseModel):
 
 class PracticeSessionComplete(BaseModel):
     ended_at: datetime | None = None
+
+
+class PracticeSegmentResponse(BaseModel):
+    id: str
+    passage_id: str | None
+    focus_codes: list[str]
+    sequence_number: int
+    started_at: datetime
+    ended_at: datetime | None
+    target_tempo_bpm: float | None
+    notes: str | None
+
+
+class PracticeSessionResponse(BaseModel):
+    id: str
+    piece_id: str
+    status: Literal["active", "completed", "abandoned", "interrupted"]
+    practice_source: Literal["musician_choice", "teacher_assignment", "application_recommendation"]
+    instrument_profile_id: str | None
+    started_at: datetime
+    ended_at: datetime | None
+    elapsed_seconds: int
+    target_duration_seconds: int | None
+    session_notes: str | None
+    current_segment: PracticeSegmentResponse | None
+    segments: list[PracticeSegmentResponse]

@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
 from app.config import Settings
-from app.main import create_app
+from app.database import Database, PracticeSegmentEntity, PracticeSessionEntity, utc_now
+from app.main import LOCAL_USER_ID, create_app
+from app.practice_session_repository import PracticeSessionRepository
 from tests.test_pieces import upload
 
 
@@ -73,10 +76,10 @@ def test_complete_session_closes_it_once_and_is_idempotent(tmp_path: Path) -> No
     assert completed_response.status_code == 200
     completed = completed_response.json()
     assert completed["status"] == "completed"
-    assert completed["ended_at"] == ended_at.isoformat()
+    assert datetime.fromisoformat(completed["ended_at"]) == ended_at
     assert completed["elapsed_seconds"] == 724
     assert completed["current_segment"] is None
-    assert completed["segments"][0]["ended_at"] == ended_at.isoformat()
+    assert datetime.fromisoformat(completed["segments"][0]["ended_at"]) == ended_at
 
     later_end = ended_at + timedelta(hours=1)
     repeated = client.post(
@@ -105,3 +108,46 @@ def test_session_survives_application_restart(tmp_path: Path) -> None:
     retrieved = client_for(tmp_path).get(f"/api/v1/practice-sessions/{created['id']}")
     assert retrieved.status_code == 200
     assert retrieved.json()["id"] == created["id"]
+
+
+def test_other_users_session_is_not_visible_or_completable(tmp_path: Path) -> None:
+    settings = Settings(database_url=f"sqlite:///{tmp_path / 'test.db'}", musicxml_storage_dir=tmp_path / "scores")
+    client = TestClient(create_app(settings))
+    piece_id = create_piece(client)
+    now = utc_now()
+    session_id = str(uuid4())
+    database = Database(settings.database_url)
+    with database.session_factory() as database_session:
+        practice_session = PracticeSessionEntity(
+            id=session_id,
+            user_id="00000000-0000-0000-0000-000000000002",
+            piece_id=piece_id,
+            instrument_profile_id=None,
+            status="active",
+            practice_source="musician_choice",
+            started_at=now,
+            ended_at=None,
+            elapsed_seconds=0,
+            target_duration_seconds=None,
+            session_notes=None,
+            created_at=now,
+            updated_at=now,
+        )
+        segment = PracticeSegmentEntity(
+            id=str(uuid4()),
+            practice_session_id=session_id,
+            passage_definition_id=None,
+            focus_codes=[],
+            sequence_number=0,
+            started_at=now,
+            ended_at=None,
+            target_tempo_bpm=None,
+            notes=None,
+            created_at=now,
+            updated_at=now,
+        )
+        PracticeSessionRepository(database_session).add(practice_session, segment)
+
+    assert LOCAL_USER_ID != practice_session.user_id
+    assert client.get(f"/api/v1/practice-sessions/{session_id}").status_code == 404
+    assert client.post(f"/api/v1/practice-sessions/{session_id}/complete", json={}).status_code == 404

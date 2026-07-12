@@ -22,7 +22,12 @@ from app.musicxml import (
 from app.piece_repository import PieceRepository
 from app.piece_storage import PieceStorage
 from app.practice_session_repository import PracticeSessionRepository
-from app.practice_session_schemas import PracticeSessionComplete, PracticeSessionCreate
+from app.practice_session_schemas import (
+    PracticeSegmentResponse,
+    PracticeSessionComplete,
+    PracticeSessionCreate,
+    PracticeSessionResponse,
+)
 
 MAX_UPLOAD_BYTES = MAX_MUSICXML_BYTES
 LOCAL_USER_ID = "00000000-0000-0000-0000-000000000001"
@@ -38,40 +43,40 @@ def piece_response(piece: PieceEntity) -> dict[str, object]:
         "updated_at": timestamp(piece.updated_at)}
 
 
-def practice_session_response(practice_session: PracticeSessionEntity) -> dict[str, object]:
-    def timestamp(value: datetime | None) -> str | None:
+def practice_session_response(practice_session: PracticeSessionEntity) -> PracticeSessionResponse:
+    def timestamp(value: datetime | None) -> datetime | None:
         if value is None:
             return None
-        return (value if value.tzinfo else value.replace(tzinfo=timezone.utc)).isoformat()
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
-    def segment_response(segment: PracticeSegmentEntity) -> dict[str, object]:
-        return {
-            "id": segment.id,
-            "passage_id": segment.passage_definition_id,
-            "focus_codes": segment.focus_codes,
-            "sequence_number": segment.sequence_number,
-            "started_at": timestamp(segment.started_at),
-            "ended_at": timestamp(segment.ended_at),
-            "target_tempo_bpm": float(segment.target_tempo_bpm) if segment.target_tempo_bpm is not None else None,
-            "notes": segment.notes,
-        }
+    def segment_response(segment: PracticeSegmentEntity) -> PracticeSegmentResponse:
+        return PracticeSegmentResponse(
+            id=segment.id,
+            passage_id=segment.passage_definition_id,
+            focus_codes=segment.focus_codes,
+            sequence_number=segment.sequence_number,
+            started_at=timestamp(segment.started_at),
+            ended_at=timestamp(segment.ended_at),
+            target_tempo_bpm=float(segment.target_tempo_bpm) if segment.target_tempo_bpm is not None else None,
+            notes=segment.notes,
+        )
 
     segments = [segment_response(segment) for segment in practice_session.segments]
-    current_segment = next((segment for segment in reversed(segments) if segment["ended_at"] is None), None)
-    return {
-        "id": practice_session.id,
-        "piece_id": practice_session.piece_id,
-        "status": practice_session.status,
-        "practice_source": practice_session.practice_source,
-        "instrument_profile_id": practice_session.instrument_profile_id,
-        "started_at": timestamp(practice_session.started_at),
-        "ended_at": timestamp(practice_session.ended_at),
-        "elapsed_seconds": practice_session.elapsed_seconds,
-        "target_duration_seconds": practice_session.target_duration_seconds,
-        "session_notes": practice_session.session_notes,
-        "current_segment": current_segment,
-        "segments": segments,
-    }
+    current_segment = next((segment for segment in reversed(segments) if segment.ended_at is None), None)
+    return PracticeSessionResponse(
+        id=practice_session.id,
+        piece_id=practice_session.piece_id,
+        status=practice_session.status,
+        practice_source=practice_session.practice_source,
+        instrument_profile_id=practice_session.instrument_profile_id,
+        started_at=timestamp(practice_session.started_at),
+        ended_at=timestamp(practice_session.ended_at),
+        elapsed_seconds=practice_session.elapsed_seconds,
+        target_duration_seconds=practice_session.target_duration_seconds,
+        session_notes=practice_session.session_notes,
+        current_segment=current_segment,
+        segments=segments,
+    )
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -169,8 +174,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         storage.delete(path)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    @app.post("/api/v1/practice-sessions", status_code=201, tags=["practice sessions"])
-    def create_practice_session(payload: PracticeSessionCreate, session: Session = Depends(get_session)):
+    @app.post(
+        "/api/v1/practice-sessions",
+        status_code=201,
+        tags=["practice sessions"],
+        response_model=PracticeSessionResponse,
+    )
+    def create_practice_session(
+        payload: PracticeSessionCreate, session: Session = Depends(get_session)
+    ) -> PracticeSessionResponse:
         require_piece(payload.piece_id, session)
         now = utc_now()
         practice_session = PracticeSessionEntity(
@@ -214,16 +226,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Practice session not found.")
         return practice_session
 
-    @app.get("/api/v1/practice-sessions/{session_id}", tags=["practice sessions"])
-    def get_practice_session(session_id: str, session: Session = Depends(get_session)):
+    @app.get(
+        "/api/v1/practice-sessions/{session_id}",
+        tags=["practice sessions"],
+        response_model=PracticeSessionResponse,
+    )
+    def get_practice_session(
+        session_id: str, session: Session = Depends(get_session)
+    ) -> PracticeSessionResponse:
         return practice_session_response(require_practice_session(session_id, session))
 
-    @app.post("/api/v1/practice-sessions/{session_id}/complete", tags=["practice sessions"])
+    @app.post(
+        "/api/v1/practice-sessions/{session_id}/complete",
+        tags=["practice sessions"],
+        response_model=PracticeSessionResponse,
+    )
     def complete_practice_session(
         session_id: str,
         payload: PracticeSessionComplete | None = None,
         session: Session = Depends(get_session),
-    ):
+    ) -> PracticeSessionResponse:
         practice_session = require_practice_session(session_id, session)
         if practice_session.status == "completed":
             return practice_session_response(practice_session)
