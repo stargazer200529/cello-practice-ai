@@ -2,12 +2,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.database import Database, PracticeSegmentEntity, PracticeSessionEntity, RecordingEntity, utc_now
 from app.main import LOCAL_USER_ID, create_app
 from app.practice_session_repository import PracticeSessionRepository
+from app.recording_storage import RecordingStorage
 from tests.test_pieces import upload
 
 
@@ -90,6 +92,15 @@ def test_recording_lifecycle_persists_metadata_and_private_audio(tmp_path: Path)
     assert saved["channel_count"] == 1
     assert "storage_key" not in saved
 
+    database = Database(settings.database_url)
+    with database.session_factory() as database_session:
+        stored_recording = database_session.get(RecordingEntity, recording["id"])
+        assert stored_recording is not None
+        assert stored_recording.storage_key == (
+            f"{LOCAL_USER_ID}/{practice_session['id']}/{recording['id']}.webm"
+        )
+        assert not Path(stored_recording.storage_key).is_absolute()
+
     stored_files = list(settings.recording_storage_dir.rglob("*.webm"))
     assert len(stored_files) == 1
     assert stored_files[0].read_bytes() == AUDIO
@@ -130,8 +141,20 @@ def test_removal_deletes_audio_but_preserves_number_and_metadata(tmp_path: Path)
     assert second["recording_number"] == 2
     assert second["label"] == "Recording 2"
     listed = client.get(f"/api/v1/practice-sessions/{practice_session['id']}/recordings").json()
-    assert [item["recording_number"] for item in listed] == [1, 2]
-    assert [item["status"] for item in listed] == ["removed", "capturing"]
+    assert [item["recording_number"] for item in listed] == [2]
+    assert [item["status"] for item in listed] == ["capturing"]
+
+
+def test_audio_upload_rejects_completed_session_without_storing_file(tmp_path: Path) -> None:
+    client = client_for(tmp_path)
+    practice_session = create_session(client)
+    recording = create_recording(client, practice_session)
+    assert client.post(f"/api/v1/practice-sessions/{practice_session['id']}/complete", json={}).status_code == 200
+
+    response = upload_audio(client, recording)
+    assert response.status_code == 409
+    assert client.get(f"/api/v1/recordings/{recording['id']}").json()["status"] == "capturing"
+    assert not (tmp_path / "recordings").exists()
 
 
 def test_recording_requires_active_session_segment_and_matching_session(tmp_path: Path) -> None:
@@ -245,3 +268,9 @@ def test_foreign_owned_recordings_are_hidden_from_all_recording_endpoints(tmp_pa
         data={"ended_at": ended_at, "duration_ms": "1000"},
     )
     assert upload_response.status_code == 404
+
+
+def test_recording_storage_rejects_path_traversal(tmp_path: Path) -> None:
+    storage = RecordingStorage(tmp_path / "recordings")
+    with pytest.raises(FileNotFoundError, match="invalid"):
+        storage.path("../outside.webm")

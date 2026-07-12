@@ -1,5 +1,5 @@
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
 
@@ -25,20 +25,24 @@ class RecordingStorage:
         mime_type: str,
         content: bytes,
     ) -> str:
-        destination_dir = self.root / user_id / practice_session_id
-        destination_dir.mkdir(parents=True, exist_ok=True)
         suffix = MIME_SUFFIXES.get(mime_type.partition(";")[0].strip().lower(), ".audio")
-        destination = destination_dir / f"{recording_id}{suffix}"
+        storage_key = PurePosixPath(user_id, practice_session_id, f"{recording_id}{suffix}")
+        destination = self.path(str(storage_key))
+        destination_dir = destination.parent
+        destination_dir.mkdir(parents=True, exist_ok=True)
         temporary = destination_dir / f".{recording_id}-{uuid4().hex}.tmp"
         try:
             temporary.write_bytes(content)
             os.replace(temporary, destination)
-            return str(destination.resolve())
+            return str(storage_key)
         finally:
             temporary.unlink(missing_ok=True)
 
     def path(self, storage_key: str) -> Path:
-        path = Path(storage_key).resolve()
+        key = PurePosixPath(storage_key)
+        if key.is_absolute() or ".." in key.parts:
+            raise FileNotFoundError("Recording storage key is invalid.")
+        path = (self.root / Path(*key.parts)).resolve()
         if path != self.root and self.root not in path.parents:
             raise FileNotFoundError("Recording is outside the configured storage directory.")
         return path

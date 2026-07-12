@@ -373,6 +373,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         session: Session = Depends(get_session),
     ) -> RecordingResponse:
         recording = require_recording(recording_id, session)
+        practice_session = require_practice_session(recording.practice_session_id, session)
+        if practice_session.status != "active":
+            raise HTTPException(status_code=409, detail="Practice session is not active.")
         if recording.status != "capturing":
             raise HTTPException(status_code=409, detail="Recording audio has already been finalized.")
         stored_path: str | None = None
@@ -393,7 +396,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
             if normalized_end < normalized_start:
                 raise HTTPException(status_code=422, detail="Recording end time cannot precede its start time.")
-            practice_session = require_practice_session(recording.practice_session_id, session)
             stored_path = recording_storage.write(
                 practice_session.user_id,
                 recording.practice_session_id,

@@ -29,7 +29,10 @@ class RecordingRepository:
     def list_for_session(self, practice_session_id: str) -> list[RecordingEntity]:
         statement = (
             select(RecordingEntity)
-            .where(RecordingEntity.practice_session_id == practice_session_id)
+            .where(
+                RecordingEntity.practice_session_id == practice_session_id,
+                RecordingEntity.status != "removed",
+            )
             .order_by(RecordingEntity.recording_number)
         )
         return list(self.session.scalars(statement))
