@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.config import Settings
 from app.database import Database, PieceEntity, utc_now
+from app.database import PracticeSessionEntity, PracticeSegmentEntity
 from app.musicxml import (
     MAX_MUSICXML_BYTES,
     MusicXMLValidationError,
@@ -20,8 +21,11 @@ from app.musicxml import (
 )
 from app.piece_repository import PieceRepository
 from app.piece_storage import PieceStorage
+from app.practice_session_repository import PracticeSessionRepository
+from app.practice_session_schemas import PracticeSessionComplete, PracticeSessionCreate
 
 MAX_UPLOAD_BYTES = MAX_MUSICXML_BYTES
+LOCAL_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 
 def piece_response(piece: PieceEntity) -> dict[str, object]:
@@ -32,6 +36,42 @@ def piece_response(piece: PieceEntity) -> dict[str, object]:
         "measure_count": piece.measure_count, "time_signatures": piece.time_signatures,
         "key_signatures": piece.key_signatures, "created_at": timestamp(piece.created_at),
         "updated_at": timestamp(piece.updated_at)}
+
+
+def practice_session_response(practice_session: PracticeSessionEntity) -> dict[str, object]:
+    def timestamp(value: datetime | None) -> str | None:
+        if value is None:
+            return None
+        return (value if value.tzinfo else value.replace(tzinfo=timezone.utc)).isoformat()
+
+    def segment_response(segment: PracticeSegmentEntity) -> dict[str, object]:
+        return {
+            "id": segment.id,
+            "passage_id": segment.passage_definition_id,
+            "focus_codes": segment.focus_codes,
+            "sequence_number": segment.sequence_number,
+            "started_at": timestamp(segment.started_at),
+            "ended_at": timestamp(segment.ended_at),
+            "target_tempo_bpm": float(segment.target_tempo_bpm) if segment.target_tempo_bpm is not None else None,
+            "notes": segment.notes,
+        }
+
+    segments = [segment_response(segment) for segment in practice_session.segments]
+    current_segment = next((segment for segment in reversed(segments) if segment["ended_at"] is None), None)
+    return {
+        "id": practice_session.id,
+        "piece_id": practice_session.piece_id,
+        "status": practice_session.status,
+        "practice_source": practice_session.practice_source,
+        "instrument_profile_id": practice_session.instrument_profile_id,
+        "started_at": timestamp(practice_session.started_at),
+        "ended_at": timestamp(practice_session.ended_at),
+        "elapsed_seconds": practice_session.elapsed_seconds,
+        "target_duration_seconds": practice_session.target_duration_seconds,
+        "session_notes": practice_session.session_notes,
+        "current_segment": current_segment,
+        "segments": segments,
+    }
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -128,6 +168,78 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         PieceRepository(session).delete(piece)
         storage.delete(path)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    @app.post("/api/v1/practice-sessions", status_code=201, tags=["practice sessions"])
+    def create_practice_session(payload: PracticeSessionCreate, session: Session = Depends(get_session)):
+        require_piece(payload.piece_id, session)
+        now = utc_now()
+        practice_session = PracticeSessionEntity(
+            id=str(uuid4()),
+            user_id=LOCAL_USER_ID,
+            piece_id=payload.piece_id,
+            instrument_profile_id=payload.instrument_profile_id,
+            status="active",
+            practice_source=payload.practice_source,
+            started_at=now,
+            ended_at=None,
+            elapsed_seconds=0,
+            target_duration_seconds=payload.target_duration_seconds,
+            session_notes=payload.session_notes,
+            created_at=now,
+            updated_at=now,
+        )
+        initial_segment = PracticeSegmentEntity(
+            id=str(uuid4()),
+            practice_session_id=practice_session.id,
+            passage_definition_id=payload.initial_passage_id,
+            focus_codes=payload.focus_codes,
+            sequence_number=0,
+            started_at=now,
+            ended_at=None,
+            target_tempo_bpm=payload.target_tempo_bpm,
+            notes=None,
+            created_at=now,
+            updated_at=now,
+        )
+        try:
+            created = PracticeSessionRepository(session).add(practice_session, initial_segment)
+        except Exception:
+            session.rollback()
+            raise
+        return practice_session_response(created)
+
+    def require_practice_session(session_id: str, session: Session) -> PracticeSessionEntity:
+        practice_session = PracticeSessionRepository(session).get(session_id)
+        if practice_session is None or practice_session.user_id != LOCAL_USER_ID:
+            raise HTTPException(status_code=404, detail="Practice session not found.")
+        return practice_session
+
+    @app.get("/api/v1/practice-sessions/{session_id}", tags=["practice sessions"])
+    def get_practice_session(session_id: str, session: Session = Depends(get_session)):
+        return practice_session_response(require_practice_session(session_id, session))
+
+    @app.post("/api/v1/practice-sessions/{session_id}/complete", tags=["practice sessions"])
+    def complete_practice_session(
+        session_id: str,
+        payload: PracticeSessionComplete | None = None,
+        session: Session = Depends(get_session),
+    ):
+        practice_session = require_practice_session(session_id, session)
+        if practice_session.status == "completed":
+            return practice_session_response(practice_session)
+        if practice_session.status != "active":
+            raise HTTPException(status_code=409, detail="Practice session is not active.")
+        ended_at = payload.ended_at if payload and payload.ended_at else utc_now()
+        if ended_at.tzinfo is None:
+            ended_at = ended_at.replace(tzinfo=timezone.utc)
+        started_at = practice_session.started_at
+        if started_at.tzinfo is None:
+            started_at = started_at.replace(tzinfo=timezone.utc)
+        if ended_at < started_at:
+            raise HTTPException(status_code=422, detail="Session end time cannot precede its start time.")
+        elapsed_seconds = int((ended_at - started_at).total_seconds())
+        PracticeSessionRepository(session).complete(practice_session, ended_at, elapsed_seconds)
+        return practice_session_response(require_practice_session(session_id, session))
 
     return app
 
