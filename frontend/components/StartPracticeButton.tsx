@@ -24,7 +24,7 @@ export function StartPracticeButton({ pieceId }: { pieceId: string }) {
 
   return <div className="start-practice">
     <button type="button" className="practice-primary-button" disabled={state === "starting"}
-      onClick={() => void startPractice()}>{state === "starting" ? "Starting practiceâ€¦" : "Start Practice"}</button>
+      onClick={() => void startPractice()}>{state === "starting" ? "Starting practice…" : "Start Practice"}</button>
     {message && <p className="error-message" role="alert">{message}</p>}
   </div>;
 }

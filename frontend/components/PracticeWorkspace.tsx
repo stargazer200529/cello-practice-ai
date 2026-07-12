@@ -72,7 +72,7 @@ export function PracticeWorkspace() {
     catch (error) { setMessage(error instanceof Error ? error.message : "The recording could not be removed."); }
   }
 
-  if (state === "loading") return <main className="workspace-main"><section className="workspace practice-shell"><p>Loading practice sessionâ€¦</p></section></main>;
+  if (state === "loading") return <main className="workspace-main"><section className="workspace practice-shell"><p>Loading practice session…</p></section></main>;
   if (state === "error" || !session || !piece) return <main><section className="hero"><h1>Practice unavailable</h1>
     <p className="error-message" role="alert">{message ?? "This practice session could not be loaded."}</p>
     <Link href="/">Return to My Music</Link></section></main>;
@@ -101,7 +101,7 @@ export function PracticeWorkspace() {
             onClick={() => void removeRecording(recording)}>Remove recording</button>}</article>)}</section>
     <footer className="practice-footer">{active ? <button type="button" className="end-practice-button"
       disabled={state === "ending" || recorderBusy} onClick={() => void endPractice()}>
-        {state === "ending" ? "Ending practiceâ€¦" : recorderBusy ? "Finish recording first" : "End Practice"}</button> :
+        {state === "ending" ? "Ending practice…" : recorderBusy ? "Finish recording first" : "End Practice"}</button> :
       <Link className="primary-link" href={`/pieces/${piece.id}`}>Return to piece</Link>}</footer>
   </section></main>;
 }

@@ -175,10 +175,10 @@ export function PracticeRecorder({
     <p className="field-help">Microphone access is requested only when you press Record. Saved audio remains private.</p>
     <p className="recorder-status" aria-live="polite">
       {state === "idle" && "Ready for your next attempt."}
-      {state === "requesting" && "Requesting microphone permissionâ€¦"}
+      {state === "requesting" && "Requesting microphone permission…"}
       {state === "recording" && `Recording ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`}
-      {state === "stopping" && "Finishing recordingâ€¦"}
-      {state === "saving" && "Saving recordingâ€¦"}
+      {state === "stopping" && "Finishing recording…"}
+      {state === "saving" && "Saving recording…"}
       {state === "upload_failed" && "Recording captured, but not yet saved."}
       {message}
     </p>
