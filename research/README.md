@@ -10,24 +10,26 @@ Run commands from this `research` directory using the local `.venv` environment:
 .\.venv\Scripts\python.exe scripts\analyze_single_note.py `
   recordings\note.wav `
   --target-midi 57 `
+  --reliability-threshold 0.8 `
   --output output\note.png `
-  --csv output\note.csv
+  --csv-output output\note.csv
 ```
 
 The plot contains three time-aligned panels:
 
-1. pYIN frequency estimate
+1. waveform amplitude
 2. cents from the requested target pitch
 3. pYIN voiced probability
 
-The reliability cutoff remains the existing provisional value of `0.8`. This
-tool makes the cutoff visible for research; it does not validate it or recommend
-changing it.
+Use `--reliability-threshold` to inspect classification at a selected pYIN
+voiced-probability cutoff. Its default remains `0.8`, and every selected value
+is provisional. This tool makes a cutoff visible for research; it does not
+validate the threshold or recommend lowering it.
 
 The CSV contains one row per pYIN frame with these columns:
 
 ```text
-frame_index,time_seconds,frequency_hz,voiced_flag,voiced_probability,midi_note,target_midi,cents_from_target,reliable
+time_seconds,frequency_hz,midi_pitch,cents_from_target,voiced,voiced_probability,reliable
 ```
 
 Numeric pitch fields are blank when pYIN does not produce a finite estimate.

@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 import librosa
 import matplotlib
@@ -16,29 +18,86 @@ import matplotlib.pyplot as plt  # noqa: E402
 A4_HZ = 440.0
 FRAME_LENGTH = 2048
 HOP_LENGTH = 256
-RELIABLE_CONFIDENCE_THRESHOLD = 0.8
+DEFAULT_RELIABILITY_THRESHOLD = 0.8
 CSV_FIELDNAMES = (
-    "frame_index",
     "time_seconds",
     "frequency_hz",
-    "voiced_flag",
-    "voiced_probability",
-    "midi_note",
-    "target_midi",
+    "midi_pitch",
     "cents_from_target",
+    "voiced",
+    "voiced_probability",
     "reliable",
 )
 
 
 @dataclass(frozen=True)
 class AnalysisStatistics:
+    audio_duration_seconds: float
     total_frames: int
     voiced_frames: int
+    voiced_frame_percentage: float
+    minimum_voiced_probability: float | None
+    maximum_voiced_probability: float | None
+    median_voiced_probability: float | None
+    reliability_threshold: float
     reliable_frames: int
     reliable_frame_percentage: float
+    median_voiced_cents: float | None
     median_reliable_cents: float | None
-    mean_reliable_cents: float | None
-    reliable_cents_standard_deviation: float | None
+
+
+def validate_audio_path(value: str | Path) -> Path:
+    audio_path = Path(value)
+    if not audio_path.is_file():
+        raise ValueError(f"Audio file not found: {audio_path}")
+    return audio_path
+
+
+def validate_target_midi(value: str | float) -> float:
+    try:
+        target_midi = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Target MIDI must be a finite number from 0 to 127.") from exc
+
+    if not math.isfinite(target_midi) or not 0 <= target_midi <= 127:
+        raise ValueError("Target MIDI must be a finite number from 0 to 127.")
+    return target_midi
+
+
+def validate_reliability_threshold(value: str | float) -> float:
+    try:
+        threshold = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "Reliability threshold must be a finite number from 0 to 1."
+        ) from exc
+
+    if not math.isfinite(threshold) or not 0 <= threshold <= 1:
+        raise ValueError(
+            "Reliability threshold must be a finite number from 0 to 1."
+        )
+    return threshold
+
+
+def _audio_path_argument(value: str) -> Path:
+    try:
+        return validate_audio_path(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+
+
+def _target_midi_argument(value: str) -> float:
+    try:
+        return validate_target_midi(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+
+
+def _reliability_threshold_argument(value: str) -> float:
+    try:
+        return validate_reliability_threshold(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
 def frequency_to_midi(frequency_hz: np.ndarray) -> np.ndarray:
@@ -59,63 +118,83 @@ def build_frame_masks(
     f0: np.ndarray,
     voiced_flag: np.ndarray,
     voiced_probability: np.ndarray,
+    reliability_threshold: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Identify valid voiced frames and frames meeting the provisional cutoff."""
+    """Identify valid voiced frames and frames meeting a provisional cutoff."""
+    threshold = validate_reliability_threshold(reliability_threshold)
     valid = (
         np.asarray(voiced_flag, dtype=bool)
         & np.isfinite(f0)
         & np.isfinite(voiced_probability)
     )
-    reliable = valid & (
-        voiced_probability >= RELIABLE_CONFIDENCE_THRESHOLD
-    )
+    reliable = valid & (voiced_probability >= threshold)
     return valid, reliable
 
 
+def _percentage(count: int, total: int) -> float:
+    return 100.0 * count / total if total else 0.0
+
+
 def calculate_statistics(
+    audio_duration_seconds: float,
     cents: np.ndarray,
+    voiced_probability: np.ndarray,
     valid: np.ndarray,
     reliable: np.ndarray,
+    reliability_threshold: float,
 ) -> AnalysisStatistics:
-    """Summarize pYIN frames without treating the cutoff as validated."""
+    """Summarize pYIN confidence and cents without validating the cutoff."""
+    threshold = validate_reliability_threshold(reliability_threshold)
     total_frames = int(cents.size)
-    reliable_cents = cents[reliable]
+    voiced_frames = int(valid.sum())
+    reliable_frames = int(reliable.sum())
 
-    if reliable_cents.size:
-        median_cents = float(np.median(reliable_cents))
-        mean_cents = float(np.mean(reliable_cents))
-        standard_deviation = float(np.std(reliable_cents))
+    if voiced_frames:
+        valid_probabilities = voiced_probability[valid]
+        minimum_probability = float(np.min(valid_probabilities))
+        maximum_probability = float(np.max(valid_probabilities))
+        median_probability = float(np.median(valid_probabilities))
+        median_voiced_cents = float(np.median(cents[valid]))
     else:
-        median_cents = None
-        mean_cents = None
-        standard_deviation = None
+        minimum_probability = None
+        maximum_probability = None
+        median_probability = None
+        median_voiced_cents = None
+
+    median_reliable_cents = (
+        float(np.median(cents[reliable])) if reliable_frames else None
+    )
 
     return AnalysisStatistics(
+        audio_duration_seconds=float(audio_duration_seconds),
         total_frames=total_frames,
-        voiced_frames=int(valid.sum()),
-        reliable_frames=int(reliable.sum()),
-        reliable_frame_percentage=(
-            100.0 * float(reliable.sum()) / total_frames
-            if total_frames
-            else 0.0
-        ),
-        median_reliable_cents=median_cents,
-        mean_reliable_cents=mean_cents,
-        reliable_cents_standard_deviation=standard_deviation,
+        voiced_frames=voiced_frames,
+        voiced_frame_percentage=_percentage(voiced_frames, total_frames),
+        minimum_voiced_probability=minimum_probability,
+        maximum_voiced_probability=maximum_probability,
+        median_voiced_probability=median_probability,
+        reliability_threshold=threshold,
+        reliable_frames=reliable_frames,
+        reliable_frame_percentage=_percentage(reliable_frames, total_frames),
+        median_voiced_cents=median_voiced_cents,
+        median_reliable_cents=median_reliable_cents,
     )
 
 
 def create_analysis_plot(
+    audio: np.ndarray,
+    sample_rate: int,
     times: np.ndarray,
-    f0: np.ndarray,
     cents: np.ndarray,
     voiced_probability: np.ndarray,
     valid: np.ndarray,
     reliable: np.ndarray,
     audio_name: str,
     target_midi: float,
+    reliability_threshold: float,
 ) -> plt.Figure:
-    """Create frequency, pitch-deviation, and confidence inspection panels."""
+    """Create waveform, pitch-deviation, and confidence inspection panels."""
+    threshold = validate_reliability_threshold(reliability_threshold)
     figure, axes = plt.subplots(
         3,
         1,
@@ -124,20 +203,16 @@ def create_analysis_plot(
         constrained_layout=True,
     )
 
-    display_f0 = np.where(valid, f0, np.nan)
-    axes[0].plot(
-        times,
-        display_f0,
-        linewidth=1,
-        color="tab:purple",
-    )
-    axes[0].set_ylabel("Frequency (Hz)")
+    waveform_times = np.arange(audio.size, dtype=float) / sample_rate
+    axes[0].plot(waveform_times, audio, linewidth=0.6, color="tab:gray")
+    axes[0].set_ylabel("Amplitude")
     axes[0].set_title(f"{audio_name} — target MIDI {target_midi:g}")
     axes[0].grid(alpha=0.2)
 
+    display_cents = np.where(valid, cents, np.nan)
     axes[1].plot(
         times,
-        cents,
+        display_cents,
         linewidth=1,
         color="0.65",
         label="Valid voiced frame",
@@ -147,7 +222,7 @@ def create_analysis_plot(
         cents[reliable],
         s=8,
         color="tab:blue",
-        label=f"Confidence ≥ {RELIABLE_CONFIDENCE_THRESHOLD:.2f}",
+        label=f"Confidence ≥ {threshold:.2f}",
         zorder=3,
     )
     axes[1].axhline(0, linestyle="--", linewidth=1, color="black")
@@ -166,14 +241,11 @@ def create_analysis_plot(
         label="pYIN voiced probability",
     )
     axes[2].axhline(
-        RELIABLE_CONFIDENCE_THRESHOLD,
+        threshold,
         linestyle="--",
         linewidth=1,
         color="tab:red",
-        label=(
-            "Provisional reliability cutoff "
-            f"({RELIABLE_CONFIDENCE_THRESHOLD:.2f})"
-        ),
+        label=f"Selected provisional cutoff ({threshold:.2f})",
     )
     axes[2].set_xlabel("Time (seconds)")
     axes[2].set_ylabel("Voiced probability")
@@ -195,8 +267,7 @@ def export_frame_csv(
     voiced_flag: np.ndarray,
     voiced_probability: np.ndarray,
     cents: np.ndarray,
-    reliable: np.ndarray,
-    target_midi: float,
+    reliability_threshold: float,
 ) -> None:
     """Export exactly one row for every frame returned by pYIN."""
     lengths = {
@@ -205,14 +276,18 @@ def export_frame_csv(
         len(voiced_flag),
         len(voiced_probability),
         len(cents),
-        len(reliable),
     }
     if len(lengths) != 1:
         raise ValueError("All pYIN frame arrays must have the same length.")
 
+    valid, reliable = build_frame_masks(
+        f0,
+        voiced_flag,
+        voiced_probability,
+        reliability_threshold,
+    )
     midi = np.full_like(f0, np.nan, dtype=float)
-    finite_f0 = np.isfinite(f0)
-    midi[finite_f0] = frequency_to_midi(f0[finite_f0])
+    midi[valid] = frequency_to_midi(f0[valid])
 
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
@@ -221,56 +296,84 @@ def export_frame_csv(
         for index in range(len(f0)):
             writer.writerow(
                 {
-                    "frame_index": index,
                     "time_seconds": _format_optional_float(times[index]),
-                    "frequency_hz": _format_optional_float(f0[index]),
-                    "voiced_flag": str(bool(voiced_flag[index])).lower(),
+                    "frequency_hz": (
+                        _format_optional_float(f0[index]) if valid[index] else ""
+                    ),
+                    "midi_pitch": (
+                        _format_optional_float(midi[index]) if valid[index] else ""
+                    ),
+                    "cents_from_target": (
+                        _format_optional_float(cents[index]) if valid[index] else ""
+                    ),
+                    "voiced": str(bool(voiced_flag[index])).lower(),
                     "voiced_probability": _format_optional_float(
                         voiced_probability[index]
                     ),
-                    "midi_note": _format_optional_float(midi[index]),
-                    "target_midi": f"{target_midi:.9g}",
-                    "cents_from_target": _format_optional_float(cents[index]),
                     "reliable": str(bool(reliable[index])).lower(),
                 }
             )
 
 
 def print_statistics(statistics: AnalysisStatistics) -> None:
-    print(f"Total pYIN frames: {statistics.total_frames}")
-    print(f"Valid voiced frames: {statistics.voiced_frames}")
+    print(f"Total audio duration: {statistics.audio_duration_seconds:.3f} seconds")
+    print(f"Total analysis frames: {statistics.total_frames}")
     print(
-        "Reliable frames at provisional confidence "
-        f">= {RELIABLE_CONFIDENCE_THRESHOLD:.2f}: "
-        f"{statistics.reliable_frames} "
-        f"({statistics.reliable_frame_percentage:.1f}%)"
+        f"Valid voiced frames: {statistics.voiced_frames} "
+        f"({statistics.voiced_frame_percentage:.1f}% of analysis frames)"
     )
 
-    if statistics.median_reliable_cents is None:
-        print("No sufficiently reliable pitch frames were detected.")
+    if statistics.voiced_frames:
+        print(
+            "Minimum voiced probability among valid voiced frames: "
+            f"{statistics.minimum_voiced_probability:.3f}"
+        )
+        print(
+            "Maximum voiced probability among valid voiced frames: "
+            f"{statistics.maximum_voiced_probability:.3f}"
+        )
+        print(
+            "Median voiced probability among valid voiced frames: "
+            f"{statistics.median_voiced_probability:.3f}"
+        )
+
+    print(
+        "Selected reliability threshold (provisional): "
+        f"{statistics.reliability_threshold:.3f}"
+    )
+    print(
+        f"Reliable frames: {statistics.reliable_frames} "
+        f"({statistics.reliable_frame_percentage:.1f}% of analysis frames)"
+    )
+
+    if not statistics.voiced_frames:
+        print("No valid voiced frames were detected; pitch statistics unavailable.")
         return
 
     print(
-        "Median reliable pitch: "
-        f"{statistics.median_reliable_cents:+.1f} cents"
+        "Median cents among all voiced frames: "
+        f"{statistics.median_voiced_cents:+.1f} cents"
     )
-    print(
-        "Mean reliable pitch: "
-        f"{statistics.mean_reliable_cents:+.1f} cents"
-    )
-    print(
-        "Reliable pitch standard deviation: "
-        f"{statistics.reliable_cents_standard_deviation:.1f} cents"
-    )
+    if statistics.median_reliable_cents is not None:
+        print(
+            "Median cents among reliable frames: "
+            f"{statistics.median_reliable_cents:+.1f} cents"
+        )
 
 
 def analyze(
     audio_path: Path,
     target_midi: float,
     output_path: Path,
-    csv_path: Path,
+    csv_output_path: Path,
+    reliability_threshold: float = DEFAULT_RELIABILITY_THRESHOLD,
 ) -> AnalysisStatistics:
+    audio_path = validate_audio_path(audio_path)
+    target_midi = validate_target_midi(target_midi)
+    threshold = validate_reliability_threshold(reliability_threshold)
+
     audio, sample_rate = librosa.load(audio_path, sr=None, mono=True)
+    audio_duration_seconds = audio.size / sample_rate
 
     f0, voiced_flag, voiced_probability = librosa.pyin(
         audio,
@@ -290,53 +393,71 @@ def analyze(
         f0,
         voiced_flag,
         voiced_probability,
+        threshold,
     )
 
     cents = np.full_like(f0, np.nan, dtype=float)
     cents[valid] = cents_from_target(f0[valid], target_midi)
-    statistics = calculate_statistics(cents, valid, reliable)
+    statistics = calculate_statistics(
+        audio_duration_seconds,
+        cents,
+        voiced_probability,
+        valid,
+        reliable,
+        threshold,
+    )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     figure = create_analysis_plot(
+        audio,
+        sample_rate,
         times,
-        f0,
         cents,
         voiced_probability,
         valid,
         reliable,
         audio_path.name,
         target_midi,
+        threshold,
     )
     figure.savefig(output_path, dpi=150)
     plt.close(figure)
 
     export_frame_csv(
-        csv_path,
+        csv_output_path,
         times,
         f0,
         voiced_flag,
         voiced_probability,
         cents,
-        reliable,
-        target_midi,
+        threshold,
     )
 
     print_statistics(statistics)
     print(f"Plot saved to: {output_path}")
-    print(f"Frame CSV saved to: {csv_path}")
+    print(f"Frame CSV saved to: {csv_output_path}")
     return statistics
 
 
-def main() -> None:
+def create_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Inspect pYIN frames for one sustained cello note."
     )
-    parser.add_argument("audio", type=Path)
+    parser.add_argument("audio", type=_audio_path_argument)
     parser.add_argument(
         "--target-midi",
-        type=float,
+        type=_target_midi_argument,
         required=True,
-        help="Target MIDI pitch. A3 is 57.",
+        help="Finite target MIDI pitch from 0 to 127. A3 is 57.",
+    )
+    parser.add_argument(
+        "--reliability-threshold",
+        type=_reliability_threshold_argument,
+        default=DEFAULT_RELIABILITY_THRESHOLD,
+        help=(
+            "Provisional pYIN voiced-probability cutoff from 0 to 1 "
+            f"(default: {DEFAULT_RELIABILITY_THRESHOLD})."
+        ),
     )
     parser.add_argument(
         "--output",
@@ -345,17 +466,26 @@ def main() -> None:
         help="Path for the three-panel PNG plot.",
     )
     parser.add_argument(
+        "--csv-output",
         "--csv",
+        dest="csv_output",
         type=Path,
         help="Path for frame CSV (defaults to the plot path with .csv).",
     )
-    args = parser.parse_args()
+    return parser
 
-    if not args.audio.is_file():
-        raise FileNotFoundError(f"Audio file not found: {args.audio}")
 
-    csv_path = args.csv or args.output.with_suffix(".csv")
-    analyze(args.audio, args.target_midi, args.output, csv_path)
+def main(argv: Sequence[str] | None = None) -> None:
+    parser = create_argument_parser()
+    args = parser.parse_args(argv)
+    csv_output_path = args.csv_output or args.output.with_suffix(".csv")
+    analyze(
+        args.audio,
+        args.target_midi,
+        args.output,
+        csv_output_path,
+        args.reliability_threshold,
+    )
 
 
 if __name__ == "__main__":
