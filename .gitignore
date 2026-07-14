@@ -10,6 +10,16 @@ backend/**/__pycache__/
 backend/**/*.py[cod]
 backend/data/
 
+# Research-only local environments, recordings, and generated artifacts
+research/**/.venv/
+research/**/recordings/
+research/**/output/
+research/.pytest-tmp/
+research/.matplotlib/
+research/**/__pycache__/
+research/**/*.py[cod]
+.pytest_cache/
+
 # Local configuration
 .env
 .env.local
