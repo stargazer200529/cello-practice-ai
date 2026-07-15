@@ -703,6 +703,29 @@ Thresholds may vary by register, note duration, tempo, articulation, dynamic, mi
 
 ---
 
+## Initial pYIN Pilot Result
+
+A first phone-recorded sustained A3 was analyzed using pYIN.
+
+Observed results:
+
+- audio duration: 10.475 seconds
+- valid voiced frames: 747 of 1,965
+- maximum voiced probability: 0.686
+- median voiced probability: 0.549
+- reliable frames at a provisional 0.8 threshold: 0
+- median pitch among voiced frames: approximately 0 cents from equal-tempered A3
+
+The pitch contour was coherent during the sustained region despite all frames falling below the provisional 0.8 cutoff.
+
+This indicates that:
+
+- pYIN voiced probability should not be interpreted as a universal quality score
+- a fixed 0.8 threshold is not supported by this first cello sample
+- threshold selection must be validated across registers, articulations, devices, and recording conditions
+- attack and release regions should be evaluated separately from the sustained region
+- no production threshold should be selected from this single recording
+
 # 18. Next Prototype
 
 The next implementation should be a research sandbox, not a production API.
