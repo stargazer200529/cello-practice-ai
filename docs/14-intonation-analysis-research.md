@@ -726,6 +726,51 @@ This indicates that:
 - attack and release regions should be evaluated separately from the sustained region
 - no production threshold should be selected from this single recording
 
+## Initial pYIN Threshold Pilot
+
+A first phone-recorded sustained A3 was analyzed using pYIN.
+
+### Recording
+
+- target: A3, MIDI 57
+- duration: 10.475 seconds
+- analysis frames: 1,965
+- valid voiced frames: 747
+- maximum voiced probability: 0.686
+- median voiced probability: 0.549
+- median pitch among voiced frames: approximately 0 cents from equal-tempered A3
+
+### Threshold comparison
+
+| Provisional threshold | Reliable frames | Percentage of all frames | Median reliable pitch |
+|---|---:|---:|---:|
+| 0.8 | 0 | 0.0% | unavailable |
+| 0.6 | 339 | 17.3% | approximately 0 cents |
+| 0.5 | 480 | 24.4% | approximately 0 cents |
+| 0.4 | 565 | 28.8% | approximately 0 cents |
+
+### Interpretation
+
+The estimated pitch center remained stable across the tested thresholds, but frame coverage changed substantially.
+
+A threshold of 0.8 rejected all frames despite a visually coherent pitch contour during the sustained note.
+
+For this sample:
+
+- 0.6 retained the strongest central portion of the sustain but produced more fragmented coverage
+- 0.5 retained most of the stable sustain while excluding much of the attack and release
+- 0.4 included more marginal onset and release material
+
+These results do not establish a production threshold. They demonstrate that:
+
+- pYIN voiced probability should not be treated as a universal signal-quality score
+- threshold selection must be validated empirically for cello
+- confidence gating alone is insufficient to distinguish attack, sustain, and release
+- note-phase detection and temporal continuity remain necessary
+- thresholds may need to vary by register, articulation, microphone, and recording conditions
+
+For continued experimentation, 0.5 may be used as a provisional inspection value for this recording only.
+
 # 18. Next Prototype
 
 The next implementation should be a research sandbox, not a production API.
