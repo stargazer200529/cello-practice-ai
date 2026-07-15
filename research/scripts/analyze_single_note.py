@@ -14,6 +14,33 @@ import numpy as np
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+try:  # Support both repository imports and direct execution from research/.
+    from research.scripts.note_phases import (  # noqa: E402
+        DEFAULT_PHASE_HEURISTICS,
+        PHASE_ATTACK,
+        PHASE_CORRECTION,
+        PHASE_RELEASE,
+        PHASE_SUSTAIN,
+        PHASE_UNVOICED,
+        PhaseDetectionResult,
+        PhaseHeuristics,
+        calculate_frame_rms,
+        detect_note_phases,
+    )
+except ModuleNotFoundError:  # pragma: no cover - exercised by local CLI runs
+    from note_phases import (  # type: ignore[no-redef]  # noqa: E402
+        DEFAULT_PHASE_HEURISTICS,
+        PHASE_ATTACK,
+        PHASE_CORRECTION,
+        PHASE_RELEASE,
+        PHASE_SUSTAIN,
+        PHASE_UNVOICED,
+        PhaseDetectionResult,
+        PhaseHeuristics,
+        calculate_frame_rms,
+        detect_note_phases,
+    )
+
 
 A4_HZ = 440.0
 FRAME_LENGTH = 2048
@@ -27,6 +54,7 @@ CSV_FIELDNAMES = (
     "voiced",
     "voiced_probability",
     "reliable",
+    "phase",
 )
 
 
@@ -44,6 +72,7 @@ class AnalysisStatistics:
     reliable_frame_percentage: float
     median_voiced_cents: float | None
     median_reliable_cents: float | None
+    phase_detection: PhaseDetectionResult | None = None
 
 
 def validate_audio_path(value: str | Path) -> Path:
@@ -142,6 +171,7 @@ def calculate_statistics(
     valid: np.ndarray,
     reliable: np.ndarray,
     reliability_threshold: float,
+    phase_detection: PhaseDetectionResult | None = None,
 ) -> AnalysisStatistics:
     """Summarize pYIN confidence and cents without validating the cutoff."""
     threshold = validate_reliability_threshold(reliability_threshold)
@@ -178,6 +208,7 @@ def calculate_statistics(
         reliable_frame_percentage=_percentage(reliable_frames, total_frames),
         median_voiced_cents=median_voiced_cents,
         median_reliable_cents=median_reliable_cents,
+        phase_detection=phase_detection,
     )
 
 
@@ -192,6 +223,7 @@ def create_analysis_plot(
     audio_name: str,
     target_midi: float,
     reliability_threshold: float,
+    phase_detection: PhaseDetectionResult | None = None,
 ) -> plt.Figure:
     """Create waveform, pitch-deviation, and confidence inspection panels."""
     threshold = validate_reliability_threshold(reliability_threshold)
@@ -253,7 +285,73 @@ def create_analysis_plot(
     axes[2].legend(loc="upper right")
     axes[2].grid(alpha=0.2)
 
+    if phase_detection is not None:
+        phase_colors = {
+            PHASE_ATTACK: "tab:orange",
+            PHASE_CORRECTION: "tab:blue",
+            PHASE_SUSTAIN: "tab:green",
+            PHASE_RELEASE: "tab:red",
+        }
+        # Contiguous phase spans use the same color on every panel so the
+        # waveform, cents contour, and confidence trace remain visually aligned.
+        for phase_name, phase_color in phase_colors.items():
+            phase_mask = phase_detection.phase_labels == phase_name
+            for start, end in _true_runs(phase_mask):
+                start_time = times[start]
+                end_time = (
+                    times[end]
+                    if end < len(times)
+                    else times[-1] + _analysis_frame_duration(times)
+                )
+                for axis in axes:
+                    axis.axvspan(start_time, end_time, color=phase_color, alpha=0.08)
+
+        marker_colors = {
+            "Attack start": "darkorange",
+            "First voiced": "purple",
+            "Correction start": "royalblue",
+            "Sustain start": "forestgreen",
+            "Sustain end": "olive",
+            "Release start": "firebrick",
+            "Release end": "brown",
+        }
+        # Every detected event receives a vertical marker on all three panels.
+        # Labels are attached only to the waveform panel to avoid duplicate keys.
+        for event_label, event_index in phase_detection.event_indices():
+            event_time = times[event_index]
+            for axis_index, axis in enumerate(axes):
+                axis.axvline(
+                    event_time,
+                    color=marker_colors[event_label],
+                    linestyle="--",
+                    linewidth=0.9,
+                    alpha=0.8,
+                    label=event_label if axis_index == 0 else None,
+                )
+        if phase_detection.event_indices():
+            axes[0].legend(loc="upper right", fontsize="small", ncol=2)
+
     return figure
+
+
+def _true_runs(mask: np.ndarray) -> list[tuple[int, int]]:
+    runs: list[tuple[int, int]] = []
+    start: int | None = None
+    for index, value in enumerate(mask):
+        if value and start is None:
+            start = index
+        elif not value and start is not None:
+            runs.append((start, index))
+            start = None
+    if start is not None:
+        runs.append((start, len(mask)))
+    return runs
+
+
+def _analysis_frame_duration(times: np.ndarray) -> float:
+    if len(times) < 2:
+        return 0.0
+    return float(np.median(np.diff(times)))
 
 
 def _format_optional_float(value: float) -> str:
@@ -268,14 +366,18 @@ def export_frame_csv(
     voiced_probability: np.ndarray,
     cents: np.ndarray,
     reliability_threshold: float,
+    phase_labels: np.ndarray | None = None,
 ) -> None:
     """Export exactly one row for every frame returned by pYIN."""
+    if phase_labels is None:
+        phase_labels = np.full(len(times), PHASE_UNVOICED, dtype="<U10")
     lengths = {
         len(times),
         len(f0),
         len(voiced_flag),
         len(voiced_probability),
         len(cents),
+        len(phase_labels),
     }
     if len(lengths) != 1:
         raise ValueError("All pYIN frame arrays must have the same length.")
@@ -311,6 +413,7 @@ def export_frame_csv(
                         voiced_probability[index]
                     ),
                     "reliable": str(bool(reliable[index])).lower(),
+                    "phase": str(phase_labels[index]),
                 }
             )
 
@@ -361,12 +464,50 @@ def print_statistics(statistics: AnalysisStatistics) -> None:
         )
 
 
+def print_phase_detection(phases: PhaseDetectionResult) -> None:
+    def format_seconds(value: float | None) -> str:
+        return "unavailable" if value is None else f"{value:.3f} seconds"
+
+    def format_cents(value: float | None) -> str:
+        return "unavailable" if value is None else f"{value:+.1f} cents"
+
+    direction_labels = {
+        "flat_to_center": "Flat -> Center",
+        "sharp_to_center": "Sharp -> Center",
+        "none": "None",
+    }
+    print("Note phase measurements:")
+    print(f"  Attack duration: {format_seconds(phases.attack_duration_seconds)}")
+    print(f"  Initial cents offset: {format_cents(phases.initial_cents_offset)}")
+    print(f"  Correction direction: {direction_labels[phases.correction_direction]}")
+    print(f"  Correction magnitude: {phases.correction_magnitude_cents:.1f} cents")
+    print(
+        "  Correction duration: "
+        f"{phases.correction_duration_seconds:.3f} seconds"
+    )
+    print(
+        "  Settled pitch center: "
+        f"{format_cents(phases.settled_pitch_center_cents)}"
+    )
+    print(f"  Sustain duration: {phases.sustain_duration_seconds:.3f} seconds")
+    print(
+        "  Sustain pitch stability: "
+        + (
+            "unavailable"
+            if phases.sustain_pitch_stability_cents is None
+            else f"{phases.sustain_pitch_stability_cents:.1f} cents"
+        )
+    )
+    print(f"  Release duration: {phases.release_duration_seconds:.3f} seconds")
+
+
 def analyze(
     audio_path: Path,
     target_midi: float,
     output_path: Path,
     csv_output_path: Path,
     reliability_threshold: float = DEFAULT_RELIABILITY_THRESHOLD,
+    phase_heuristics: PhaseHeuristics = DEFAULT_PHASE_HEURISTICS,
 ) -> AnalysisStatistics:
     audio_path = validate_audio_path(audio_path)
     target_midi = validate_target_midi(target_midi)
@@ -398,6 +539,20 @@ def analyze(
 
     cents = np.full_like(f0, np.nan, dtype=float)
     cents[valid] = cents_from_target(f0[valid], target_midi)
+    frame_energy = calculate_frame_rms(
+        audio,
+        FRAME_LENGTH,
+        HOP_LENGTH,
+        len(times),
+    )
+    phase_detection = detect_note_phases(
+        times,
+        cents,
+        valid,
+        voiced_probability,
+        frame_energy,
+        phase_heuristics,
+    )
     statistics = calculate_statistics(
         audio_duration_seconds,
         cents,
@@ -405,6 +560,7 @@ def analyze(
         valid,
         reliable,
         threshold,
+        phase_detection,
     )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -419,6 +575,7 @@ def analyze(
         audio_path.name,
         target_midi,
         threshold,
+        phase_detection,
     )
     figure.savefig(output_path, dpi=150)
     plt.close(figure)
@@ -431,9 +588,11 @@ def analyze(
         voiced_probability,
         cents,
         threshold,
+        phase_detection.phase_labels,
     )
 
     print_statistics(statistics)
+    print_phase_detection(phase_detection)
     print(f"Plot saved to: {output_path}")
     print(f"Frame CSV saved to: {csv_output_path}")
     return statistics

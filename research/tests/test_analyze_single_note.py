@@ -139,6 +139,7 @@ def test_csv_has_canonical_schema_and_blank_unvoiced_pitch_values(
     voiced = np.array([True, False, True])
     probabilities = np.array([0.9, 0.1, 0.6])
     cents = np.array([0.0, np.nan, cents_from_target(np.array([221.0]), 57)[0]])
+    phases = np.array(["attack", "unvoiced", "sustain"])
 
     export_frame_csv(
         csv_path,
@@ -148,6 +149,7 @@ def test_csv_has_canonical_schema_and_blank_unvoiced_pitch_values(
         probabilities,
         cents,
         reliability_threshold=0.7,
+        phase_labels=phases,
     )
 
     with csv_path.open(newline="", encoding="utf-8") as csv_file:
@@ -163,6 +165,7 @@ def test_csv_has_canonical_schema_and_blank_unvoiced_pitch_values(
         "voiced",
         "voiced_probability",
         "reliable",
+        "phase",
     ]
     assert len(rows) == len(f0)
     assert rows[0]["frequency_hz"] == "220"
@@ -171,6 +174,7 @@ def test_csv_has_canonical_schema_and_blank_unvoiced_pitch_values(
     assert rows[1]["midi_pitch"] == ""
     assert rows[1]["cents_from_target"] == ""
     assert rows[1]["voiced"] == "false"
+    assert [row["phase"] for row in rows] == phases.tolist()
     assert rows[2]["reliable"] == "false"
 
 
@@ -251,3 +255,6 @@ def test_generated_pcm_wav_runs_end_to_end_and_creates_directories(
     assert len(rows) == statistics.total_frames
     assert statistics.total_frames > 0
     assert statistics.audio_duration_seconds == pytest.approx(0.75, abs=0.001)
+    assert statistics.phase_detection is not None
+    assert len(statistics.phase_detection.phase_labels) == statistics.total_frames
+    assert "sustain" in {row["phase"] for row in rows}
